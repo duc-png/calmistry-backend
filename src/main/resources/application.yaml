@@ -1,0 +1,31 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /calmistry
+
+spring:
+  datasource:
+    url: "jdbc:mysql://${DB_HOST:localhost}:3306/calmistry"
+    driverClassName: "com.mysql.cj.jdbc.Driver"
+    username: root
+    password: 170103
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+#outbound:
+#  identity:
+#    client-id: "<clientId>"
+#    client-secret: "<clientSecret>"
+#    redirect-uri: "http://localhost:3000/authenticate"
+
+jwt:
+  signerKey: "wYUihtKXpSs/+rDJXC2wdSpL0O03rp7UK7KGk4+GoQkSPaRJ8z3//8hvl+NBOIams3cweOfBvBoyFXceds/VxA=="
+  valid-duration: 3600 # in second
+  refreshable-duration: 36000 # in seconds
+
+# Gemini AI Configuration
+gemini:
+  api-key: AIzaSyBqKR_4b5SIX4Nsffy-An4g4ihRhlr1u40
+  model: gemini-1.5-flash
