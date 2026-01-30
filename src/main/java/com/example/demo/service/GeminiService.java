@@ -5,7 +5,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
@@ -16,10 +18,10 @@ import java.util.Map;
 @Service
 public class GeminiService {
 
-    @Value("${gemini.api-key}")
+    @Value("${spring.ai.openai.api-key}")
     private String apiKey;
 
-    @Value("${gemini.model:gemini-pro}")
+    @Value("${spring.ai.openai.chat.options.model:gemini-1.5-flash}")
     private String model;
 
     private final RestTemplate restTemplate = new RestTemplate();
@@ -35,10 +37,11 @@ public class GeminiService {
             "- Luôn trả lời bằng tiếng Việt";
 
     /**
-     * Generate AI response using Gemini API
+     * Generate AI response using Gemini API (Native Endpoint)
      */
     public String generateResponse(String userMessage) {
         try {
+            // Use native Gemini endpoint
             String url = String.format(
                     "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s",
                     model, apiKey);
@@ -70,20 +73,22 @@ public class GeminiService {
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 
             // Call API
-            @SuppressWarnings("unchecked")
-            Map<String, Object> response = restTemplate.postForObject(url, entity, Map.class);
+            log.info("Calling Gemini API with model: {} via native endpoint", model);
+            ResponseEntity<Map> response = restTemplate.postForEntity(url, entity, Map.class);
 
-            // Extract response text
-            if (response != null && response.containsKey("candidates")) {
+            // Extract response text (Native Gemini format)
+            if (response.getBody() != null && response.getBody().containsKey("candidates")) {
                 @SuppressWarnings("unchecked")
-                List<Map<String, Object>> candidates = (List<Map<String, Object>>) response.get("candidates");
+                List<Map<String, Object>> candidates = (List<Map<String, Object>>) response.getBody().get("candidates");
                 if (!candidates.isEmpty()) {
                     @SuppressWarnings("unchecked")
                     Map<String, Object> content1 = (Map<String, Object>) candidates.get(0).get("content");
                     @SuppressWarnings("unchecked")
                     List<Map<String, Object>> parts = (List<Map<String, Object>>) content1.get("parts");
                     if (!parts.isEmpty()) {
-                        return (String) parts.get(0).get("text");
+                        String aiResponse = (String) parts.get(0).get("text");
+                        log.info("Successfully received AI response");
+                        return aiResponse.trim();
                     }
                 }
             }
@@ -91,6 +96,15 @@ public class GeminiService {
             log.warn("Unexpected response format from Gemini API");
             return "Xin lỗi, tôi không thể trả lời lúc này. Vui lòng thử lại sau.";
 
+        } catch (HttpClientErrorException.TooManyRequests e) {
+            log.error("Rate limit exceeded: {}", e.getMessage());
+            return "Xin lỗi, hệ thống đang quá tải. Vui lòng thử lại sau vài phút.";
+        } catch (HttpClientErrorException.Unauthorized e) {
+            log.error("API key invalid or expired: {}", e.getMessage());
+            return "Xin lỗi, có vấn đề với cấu hình hệ thống. Vui lòng liên hệ quản trị viên.";
+        } catch (HttpClientErrorException e) {
+            log.error("HTTP error calling Gemini API: {} - {}", e.getStatusCode(), e.getMessage());
+            return "Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại sau.";
         } catch (Exception e) {
             log.error("Error calling Gemini API: {}", e.getMessage(), e);
             return "Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại sau.";

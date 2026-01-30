@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import java.util.Map;
 import java.util.Objects;
+
 @Slf4j
 @ControllerAdvice
 
@@ -19,7 +20,7 @@ public class GlobalExceptionHandler {
 
     private static final String MIN_ATTRIBUTE = "min";
 
-    @ExceptionHandler(value = Exception.class)
+    @ExceptionHandler(value = RuntimeException.class)
     ResponseEntity<ApiResponse> handlingRuntimeException(RuntimeException exception) {
         log.error("Exception: ", exception);
         ApiResponse apiResponse = new ApiResponse();
@@ -57,7 +58,8 @@ public class GlobalExceptionHandler {
         log.error("Request body is missing or invalid: ", exception);
         ApiResponse apiResponse = new ApiResponse();
         apiResponse.setCode(ErrorCode.INVALID_KEY.getCode());
-        apiResponse.setMessage("Request body is required. Please check your Content-Type header and ensure JSON body is provided.");
+        apiResponse.setMessage(
+                "Request body is required. Please check your Content-Type header and ensure JSON body is provided.");
         return ResponseEntity.badRequest().body(apiResponse);
     }
 
@@ -70,8 +72,8 @@ public class GlobalExceptionHandler {
         try {
             errorCode = ErrorCode.valueOf(enumKey);
 
-            var constraintViolation =
-                    exception.getBindingResult().getAllErrors().getFirst().unwrap(ConstraintViolation.class);
+            var constraintViolation = exception.getBindingResult().getAllErrors().getFirst()
+                    .unwrap(ConstraintViolation.class);
 
             attributes = constraintViolation.getConstraintDescriptor().getAttributes();
 

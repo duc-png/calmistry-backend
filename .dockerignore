@@ -1,0 +1,17 @@
+target/
+.mvn/
+mvnw
+mvnw.cmd
+*.log
+startup.log
+.git/
+.gitignore
+.gitattributes
+.idea/
+*.iml
+.DS_Store
+README*.md
+HELP.md
+docker-compose.yml
+Test*.java
+models_list.json

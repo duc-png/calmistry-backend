@@ -1,5 +1,7 @@
 package com.example.demo.controller;
 
+
+
 import com.example.demo.dto.ApiResponse;
 import com.example.demo.dto.request.CreateJournalRequest;
 import com.example.demo.dto.request.UpdateJournalRequest;
@@ -9,10 +11,12 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/journals")
 @RequiredArgsConstructor
@@ -25,6 +29,9 @@ public class JournalController {
     public ApiResponse<List<JournalResponse>> getJournals(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String mood) {
+
+        log.info("📖 GET /journals - search: {}, mood: {}", search, mood);
+
         var result = journalService.getJournals(search, mood);
         return ApiResponse.<List<JournalResponse>>builder()
                 .result(result)

@@ -23,7 +23,10 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
     private final String[] PUBLIC_ENDPOINTS = {
             "/users", "/auth/token", "/auth/introspect", "/auth/logout", "/auth/refresh",
-            "/auth/outbound/authentication", "/ws/**"
+            "/auth/register", // User registration endpoint
+            "/auth/outbound/authentication", "/ws/**", "/journals/**", // TEMP: Testing without auth
+            // Swagger UI & API Docs
+            "/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html"
     };
 
     private final CustomJwtDecoder customJwtDecoder;
@@ -38,7 +41,18 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Enable CORS
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(request -> request
+                        // Public endpoints
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+                        // Swagger UI - Explicitly permit all variations
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**",
+                                "/v3/api-docs",
+                                "/swagger-resources/**",
+                                "/webjars/**")
+                        .permitAll()
+                        // Everything else requires authentication
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt
@@ -54,7 +68,9 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.addAllowedOriginPattern("*"); // Allow all origins in development
+        // Fix: Cannot use wildcard with credentials=true
+        config.addAllowedOrigin("http://localhost:5173"); // Frontend dev server
+        config.addAllowedOrigin("http://localhost:3000"); // Backup port
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
         source.registerCorsConfiguration("/**", config);

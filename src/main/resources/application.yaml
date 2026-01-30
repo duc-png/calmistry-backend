@@ -20,6 +20,18 @@ spring:
 #    client-secret: "<clientSecret>"
 #    redirect-uri: "http://localhost:3000/authenticate"
 
+  application:
+    name: spring-ai-demo
+  ai:
+    openai:
+      api-key: AIzaSyAIJKmUv5NEbHsgVP01052OfHG1jMj_Zy8
+      chat:
+        base-url: https://generativelanguage.googleapis.com
+        completions-path: /v1beta/openai/chat/completions
+        options:
+          model: gemini-1.5-flash
+
+# JWT Configuration
 jwt:
   signerKey: "wYUihtKXpSs/+rDJXC2wdSpL0O03rp7UK7KGk4+GoQkSPaRJ8z3//8hvl+NBOIams3cweOfBvBoyFXceds/VxA=="
   valid-duration: 3600 # in second
@@ -27,5 +39,7 @@ jwt:
 
 # Gemini AI Configuration
 gemini:
-  api-key: AIzaSyBqKR_4b5SIX4Nsffy-An4g4ihRhlr1u40
+  api-key: AIzaSyCz_WwsloQnnBcx5AhTW8pv_rH5758X-js
   model: gemini-1.5-flash
+
+
