@@ -42,6 +42,19 @@ public class AuthenticationController {
                 .build();
     }
 
+    /**
+     * User login - Get JWT token
+     */
+    @PostMapping("/token")
+    ApiResponse<AuthenticationResponse> login(@RequestBody AuthenticationRequest request) {
+        log.info("🔐 Login request for email: {}", request.getEmail());
+        var result = authenticationService.authenticate(request);
+        return ApiResponse.<AuthenticationResponse>builder()
+                .code(1000)
+                .result(result)
+                .build();
+    }
+
     @PostMapping("/introspect")
     ApiResponse<IntrospectResponse> authenticate(@RequestBody IntrospectRequest request)
             throws ParseException, JOSEException {

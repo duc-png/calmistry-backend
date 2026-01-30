@@ -6,10 +6,12 @@ import com.example.demo.dto.request.UserRegistrationRequest;
 import com.example.demo.dto.response.AuthenticationResponse;
 import com.example.demo.dto.response.IntrospectResponse;
 import com.example.demo.dto.response.UserRegistrationResponse;
+import com.example.demo.entity.Role;
 import com.example.demo.entity.User;
 import com.example.demo.exception.AppException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.InvalidatedTokenRepository;
+import com.example.demo.repository.RoleRepository;
 import com.example.demo.repository.UserRepository;
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.MACSigner;
@@ -41,6 +43,7 @@ import java.util.UUID;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AuthenticationService {
     final UserRepository userRepository;
+    final RoleRepository roleRepository;
     final InvalidatedTokenRepository invalidatedTokenRepository;
     final PasswordEncoder passwordEncoder;
 
@@ -94,8 +97,16 @@ public class AuthenticationService {
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        // Save user
+        // Save user first
         User savedUser = userRepository.save(newUser);
+
+        // Assign default USER role
+        Role userRole = roleRepository.findByName("USER")
+                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+        savedUser.getRoles().add(userRole);
+
+        // Save again to persist the role relationship
+        savedUser = userRepository.save(savedUser);
 
         log.info("✅ User registered successfully with email: {}", savedUser.getEmail());
 
@@ -109,15 +120,27 @@ public class AuthenticationService {
     }
 
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
+        log.info("🔐 [Login] Attempting authentication for email: {}", request.getEmail());
+
         var user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new AppException(ErrorCode.INVALID_CREDENTIALS));
+                .orElseThrow(() -> {
+                    log.error("❌ [Login] User not found: {}", request.getEmail());
+                    return new AppException(ErrorCode.INVALID_CREDENTIALS);
+                });
+
+        log.info("✅ [Login] User found: {}, roles: {}", user.getUsername(), user.getRoles().size());
 
         boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
+        log.info("🔑 [Login] Password match: {}", authenticated);
 
-        if (!authenticated)
+        if (!authenticated) {
+            log.error("❌ [Login] Password mismatch for user: {}", user.getUsername());
             throw new AppException(ErrorCode.INVALID_CREDENTIALS);
+        }
 
+        log.info("🎫 [Login] Generating token for user: {}", user.getUsername());
         var token = generateToken(user);
+        log.info("✅ [Login] Authentication successful for: {}", user.getUsername());
 
         return AuthenticationResponse.builder()
                 .token(token)
