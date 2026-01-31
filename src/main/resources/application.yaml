@@ -48,7 +48,7 @@ gemini:
 
 # Cloudinary Configuration
 cloudinary:
-  cloud-name: mito
+  cloud-name: dculsqafi
   api-key: 885716972975153
   api-secret: YjMVc_vvJAewdntYU4j0kFOaEV4
 
