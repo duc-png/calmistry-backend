@@ -24,7 +24,7 @@ import java.util.UUID;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class FileController {
 
-    private static final String UPLOAD_DIR = "dev-uploads";
+    private final com.cloudinary.Cloudinary cloudinary;
 
     @PostMapping("/upload")
     public ApiResponse<String> uploadFile(@RequestParam("file") MultipartFile file) throws IOException {
@@ -32,36 +32,19 @@ public class FileController {
             throw new RuntimeException("File is empty");
         }
 
-        // Ensure upload directory exists
-        Path uploadPath = Paths.get(UPLOAD_DIR);
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
+        try {
+            // Upload to Cloudinary
+            java.util.Map<?, ?> uploadResult = cloudinary.uploader().upload(file.getBytes(),
+                    com.cloudinary.utils.ObjectUtils.emptyMap());
+
+            // Get Secure URL (https)
+            String fileUrl = (String) uploadResult.get("secure_url");
+
+            return ApiResponse.<String>builder()
+                    .result(fileUrl)
+                    .build();
+        } catch (IOException e) {
+            throw new RuntimeException("Upload failed", e);
         }
-
-        // Generate unique filename
-        String originalFilename = StringUtils.cleanPath(file.getOriginalFilename());
-        String fileExtension = "";
-        int dotIndex = originalFilename.lastIndexOf('.');
-        if (dotIndex > 0) {
-            fileExtension = originalFilename.substring(dotIndex);
-        }
-
-        String newFilename = UUID.randomUUID().toString() + fileExtension;
-
-        // Save file
-        Path filePath = uploadPath.resolve(newFilename);
-        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-        // Return URL (relative to server root context)
-        // Note: The context path is /calmistry, but resource handler is handled by
-        // Spring
-        // The full URL will be constructed by frontend or server
-        // Returning relative path including servlet context logic might be tricky,
-        // usually we return just the path served by ResourceHandler
-        String fileUrl = "/files/" + newFilename;
-
-        return ApiResponse.<String>builder()
-                .result(fileUrl)
-                .build();
     }
 }

@@ -42,4 +42,10 @@ gemini:
   api-key: AIzaSyCz_WwsloQnnBcx5AhTW8pv_rH5758X-js
   model: gemini-1.5-flash
 
+# Cloudinary Configuration
+cloudinary:
+  cloud-name: mito
+  api-key: 885716972975153
+  api-secret: YjMVc_vvJAewdntYU4j0kFOaEV4
+
 
