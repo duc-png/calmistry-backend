@@ -14,11 +14,16 @@ import java.io.IOException;
 
 @RestController
 @RequestMapping("/files")
-@RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@lombok.extern.slf4j.Slf4j
 public class FileController {
 
     private final com.cloudinary.Cloudinary cloudinary;
+
+    public FileController(com.cloudinary.Cloudinary cloudinary) {
+        this.cloudinary = cloudinary;
+        log.info("============== FILE CONTROLLER INITIALIZED ==============");
+    }
 
     @PostMapping("/upload")
     public ApiResponse<String> uploadFile(@RequestParam("file") MultipartFile file) throws IOException {
