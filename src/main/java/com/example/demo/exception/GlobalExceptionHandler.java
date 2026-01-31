@@ -99,4 +99,13 @@ public class GlobalExceptionHandler {
 
         return message.replace("{" + MIN_ATTRIBUTE + "}", minValue);
     }
+
+    @ExceptionHandler(value = org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    ResponseEntity<ApiResponse> handlingMaxUploadSizeExceededException(
+            org.springframework.web.multipart.MaxUploadSizeExceededException exception) {
+        ApiResponse apiResponse = new ApiResponse();
+        apiResponse.setCode(ErrorCode.INVALID_KEY.getCode()); // Using generic invalid key code or create new one
+        apiResponse.setMessage("File is too large! Maximum size is 10MB.");
+        return ResponseEntity.status(org.springframework.http.HttpStatus.PAYLOAD_TOO_LARGE).body(apiResponse);
+    }
 }
