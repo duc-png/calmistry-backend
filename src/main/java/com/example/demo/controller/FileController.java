@@ -14,14 +14,15 @@ import java.io.IOException;
 
 @RestController
 @RequestMapping("/files")
+@RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @lombok.extern.slf4j.Slf4j
 public class FileController {
 
     private final com.cloudinary.Cloudinary cloudinary;
 
-    public FileController(com.cloudinary.Cloudinary cloudinary) {
-        this.cloudinary = cloudinary;
+    @jakarta.annotation.PostConstruct
+    public void init() {
         log.info("============== FILE CONTROLLER INITIALIZED ==============");
     }
 

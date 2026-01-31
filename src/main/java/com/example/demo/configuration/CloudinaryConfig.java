@@ -9,13 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Configuration
-@Configuration
-@lombok.extern.slf4j.Slf4j
 public class CloudinaryConfig {
-
-    public CloudinaryConfig() {
-        log.info("============== CLOUDINARY CONFIG LOADED ==============");
-    }
 
     @Value("${cloudinary.cloud-name}")
     private String cloudName;
