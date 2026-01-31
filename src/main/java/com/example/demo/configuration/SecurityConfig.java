@@ -25,6 +25,9 @@ public class SecurityConfig {
             "/users", "/auth/token", "/auth/introspect", "/auth/logout", "/auth/refresh",
             "/auth/register", // User registration endpoint
             "/auth/outbound/authentication", "/ws/**", "/journals/**", // TEMP: Testing without auth
+            "/files/**", // Public File Access
+            // Public Blog Access
+            "/blogs/published", "/blogs/search", "/blogs/{id}",
             // Swagger UI & API Docs
             "/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html"
     };
@@ -43,6 +46,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(request -> request
                         // Public endpoints
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/blogs/**").permitAll() // Allow all GET requests to blogs
                         // Swagger UI - Explicitly permit all variations
                         .requestMatchers(
                                 "/swagger-ui/**",

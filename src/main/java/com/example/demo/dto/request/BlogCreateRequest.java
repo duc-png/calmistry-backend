@@ -25,11 +25,9 @@ public class BlogCreateRequest {
 
     String thumbnailUrl;
 
-    @Builder.Default
-    BlogStatus status = BlogStatus.DRAFT;
+    BlogStatus status;
 
     public enum BlogStatus {
         DRAFT, PUBLISHED, ARCHIVED
     }
 }
-

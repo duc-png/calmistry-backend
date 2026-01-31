@@ -201,12 +201,31 @@ public class AuthenticationService {
 
     }
 
+    public void logout(IntrospectRequest request) throws ParseException, JOSEException {
+        try {
+            var signToken = verifyToken(request.getToken(), true);
+
+            String jit = signToken.getJWTClaimsSet().getJWTID();
+            Date expiryTime = signToken.getJWTClaimsSet().getExpirationTime();
+
+            com.example.demo.entity.InvalidatedToken invalidatedToken = com.example.demo.entity.InvalidatedToken
+                    .builder()
+                    .id(jit)
+                    .expiryTime(expiryTime)
+                    .build();
+
+            invalidatedTokenRepository.save(invalidatedToken);
+        } catch (AppException e) {
+            log.info("Token already expired or invalid");
+        }
+    }
+
     private String buildScope(User user) {
         StringJoiner stringJoiner = new StringJoiner(" ");
 
         if (!CollectionUtils.isEmpty(user.getRoles()))
             user.getRoles().forEach(role -> {
-                stringJoiner.add("Role_" + role.getName());
+                stringJoiner.add("ROLE_" + role.getName());
                 if (!CollectionUtils.isEmpty(role.getPermissions()))
                     role.getPermissions().forEach(permission -> {
                         stringJoiner.add(permission.getName());

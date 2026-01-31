@@ -15,7 +15,9 @@ import java.time.LocalDateTime;
 public class BlogResponse {
     Long id;
     Long expertId;
-    String expertName;
+    String expertName; // Keep for backward compatibility
+    String authorName;
+    String authorAvatar;
     Long categoryId;
     String categoryName;
     String title;
@@ -23,8 +25,10 @@ public class BlogResponse {
     String content;
     String thumbnailUrl;
     Integer viewCount;
+    Long likeCount;
+    Long commentCount;
+    boolean isLiked;
     Blog.BlogStatus status;
     LocalDateTime createdAt;
     LocalDateTime updatedAt;
 }
-

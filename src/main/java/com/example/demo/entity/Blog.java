@@ -66,8 +66,11 @@ public class Blog {
     @OneToMany(mappedBy = "blog", cascade = CascadeType.ALL)
     private Set<BlogInteraction> interactions = new HashSet<>();
 
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User author;
+
     public enum BlogStatus {
-        DRAFT, PUBLISHED, ARCHIVED
+        DRAFT, PUBLISHED, ARCHIVED, PENDING
     }
 }
-

@@ -2,7 +2,7 @@ package com.example.demo.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.LocalDateTime;
+import java.util.Date;
 
 @Entity
 @Table(name = "invalidated_tokens")
@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class InvalidatedToken {
 
     @Id
@@ -17,5 +18,5 @@ public class InvalidatedToken {
     private String id; // JTI hoặc token string
 
     @Column(name = "expiry_time", nullable = false)
-    private LocalDateTime expiryTime;
+    private Date expiryTime;
 }

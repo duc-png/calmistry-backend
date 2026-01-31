@@ -18,4 +18,5 @@ public class UserResponse {
     Integer fuedScore; // Maps to totalPoints in UserStats
     Integer currentStreak;
     LocalDate lastActivityDate;
+    java.util.Set<String> roles;
 }

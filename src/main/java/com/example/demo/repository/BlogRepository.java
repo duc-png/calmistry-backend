@@ -12,26 +12,30 @@ import java.util.Optional;
 @Repository
 public interface BlogRepository extends JpaRepository<Blog, Long> {
     Optional<Blog> findBySlug(String slug);
+
     List<Blog> findByExpertId(Long expertId);
+
     List<Blog> findByStatus(Blog.BlogStatus status);
+
     List<Blog> findByCategoryId(Long categoryId);
-    
+
     // Search by title (case-insensitive, partial match)
     List<Blog> findByTitleContainingIgnoreCase(String title);
-    
+
     // Search by title and category
     List<Blog> findByTitleContainingIgnoreCaseAndCategoryId(String title, Long categoryId);
-    
+
     // Search by title and status
     List<Blog> findByTitleContainingIgnoreCaseAndStatus(String title, Blog.BlogStatus status);
-    
+
+    // Search by category and status
+    List<Blog> findByCategoryIdAndStatus(Long categoryId, Blog.BlogStatus status);
+
     // Search by title, category and status
     List<Blog> findByTitleContainingIgnoreCaseAndCategoryIdAndStatus(
-        String title, Long categoryId, Blog.BlogStatus status
-    );
-    
+            String title, Long categoryId, Blog.BlogStatus status);
+
     // Search by category name (using JOIN)
     @Query("SELECT b FROM Blog b JOIN b.category c WHERE LOWER(c.name) LIKE LOWER(CONCAT('%', :categoryName, '%'))")
     List<Blog> findByCategoryNameContainingIgnoreCase(@Param("categoryName") String categoryName);
 }
-

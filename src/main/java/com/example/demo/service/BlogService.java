@@ -3,6 +3,7 @@ package com.example.demo.service;
 import com.example.demo.dto.request.BlogCreateRequest;
 import com.example.demo.dto.response.BlogResponse;
 import com.example.demo.entity.Blog;
+import com.example.demo.dto.response.CategoryResponse;
 import com.example.demo.entity.BlogCategory;
 import com.example.demo.entity.ExpertProfile;
 import com.example.demo.entity.User;
@@ -35,6 +36,8 @@ public class BlogService {
     BlogCategoryRepository blogCategoryRepository;
     ExpertProfileRepository expertProfileRepository;
     UserRepository userRepository;
+    com.example.demo.repository.BlogInteractionRepository blogInteractionRepository;
+    com.example.demo.repository.CommentRepository commentRepository;
 
     @Transactional
     public BlogResponse createBlog(BlogCreateRequest request) {
@@ -44,14 +47,14 @@ public class BlogService {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
 
-        // Tìm user hiện tại (có thể là username hoặc email)
+        // Tìm user hiện tại
         User currentUser = userRepository.findByUsername(username)
                 .orElseGet(() -> userRepository.findByEmail(username)
                         .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED)));
 
-        // Kiểm tra user có phải Expert không
-        ExpertProfile expertProfile = expertProfileRepository.findByUserId(currentUser.getId())
-                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHORIZED));
+        // Kiểm tra permission (EXPERT or ADMIN)
+        boolean canAutoPublish = currentUser.getRoles().stream()
+                .anyMatch(role -> role.getName().equals("EXPERT") || role.getName().equals("ADMIN"));
 
         // Kiểm tra category tồn tại
         BlogCategory category = blogCategoryRepository.findById(request.getCategoryId())
@@ -59,14 +62,28 @@ public class BlogService {
 
         // Tạo blog mới
         Blog blog = new Blog();
-        blog.setExpert(expertProfile);
+        blog.setAuthor(currentUser); // Set user as author
         blog.setCategory(category);
         blog.setTitle(request.getTitle());
         blog.setContent(request.getContent());
         blog.setThumbnailUrl(request.getThumbnailUrl());
-        blog.setStatus(request.getStatus() != null 
-                ? Blog.BlogStatus.valueOf(request.getStatus().name()) 
-                : Blog.BlogStatus.DRAFT);
+
+        // Set status based on role
+        if (canAutoPublish) {
+            // EXPERT/ADMIN: Auto Publish
+            // If Expert, set Expert profile if available
+            if (currentUser.getRoles().stream().anyMatch(r -> r.getName().equals("EXPERT"))) {
+                expertProfileRepository.findByUserId(currentUser.getId())
+                        .ifPresent(blog::setExpert);
+            }
+
+            blog.setStatus(request.getStatus() != null
+                    ? Blog.BlogStatus.valueOf(request.getStatus().name())
+                    : Blog.BlogStatus.PUBLISHED);
+        } else {
+            // User: Always PENDING
+            blog.setStatus(Blog.BlogStatus.PENDING);
+        }
 
         // Generate slug nếu không có
         String slug = request.getSlug();
@@ -104,6 +121,16 @@ public class BlogService {
                 .collect(Collectors.toList());
     }
 
+    public List<CategoryResponse> getAllCategories() {
+        return blogCategoryRepository.findAll().stream()
+                .map(category -> CategoryResponse.builder()
+                        .id(category.getId())
+                        .name(category.getName())
+                        .description(category.getDescription())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
     public List<BlogResponse> getPublishedBlogs() {
         return blogRepository.findByStatus(Blog.BlogStatus.PUBLISHED).stream()
                 .map(this::mapToResponse)
@@ -127,6 +154,9 @@ public class BlogService {
         } else if (title != null && !title.isBlank()) {
             // Chỉ search theo title
             blogs = blogRepository.findByTitleContainingIgnoreCase(title);
+        } else if (categoryId != null && status != null) {
+            // Search theo category và status
+            blogs = blogRepository.findByCategoryIdAndStatus(categoryId, status);
         } else if (categoryId != null) {
             // Chỉ search theo category
             blogs = blogRepository.findByCategoryId(categoryId);
@@ -162,12 +192,82 @@ public class BlogService {
         return slug.isEmpty() ? "blog-" + System.currentTimeMillis() : slug;
     }
 
+    @Transactional
+    public BlogResponse approveBlog(Long id, Blog.BlogStatus status) {
+        Blog blog = blogRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_KEY));
+
+        // Validate status transition if needed
+        blog.setStatus(status);
+
+        // If approving, maybe set expert as the approver? Or just leave it.
+        // For now just update status.
+
+        return mapToResponse(blogRepository.save(blog));
+    }
+
+    @Transactional
+    public void likeBlog(Long blogId) {
+        String username = SecurityUtil.getCurrentUsername();
+        if (username == null)
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+
+        User currentUser = userRepository.findByUsername(username)
+                .orElseGet(() -> userRepository.findByEmail(username)
+                        .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED)));
+
+        Blog blog = blogRepository.findById(blogId)
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_KEY));
+
+        if (!blogInteractionRepository.existsByUserAndBlogAndInteractionType(currentUser, blog,
+                com.example.demo.entity.BlogInteraction.InteractionType.LIKE)) {
+            com.example.demo.entity.BlogInteraction interaction = new com.example.demo.entity.BlogInteraction();
+            interaction.setUser(currentUser);
+            interaction.setBlog(blog);
+            interaction.setInteractionType(com.example.demo.entity.BlogInteraction.InteractionType.LIKE);
+            blogInteractionRepository.save(interaction);
+        }
+    }
+
+    @Transactional
+    public void unlikeBlog(Long blogId) {
+        String username = SecurityUtil.getCurrentUsername();
+        if (username == null)
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+
+        User currentUser = userRepository.findByUsername(username)
+                .orElseGet(() -> userRepository.findByEmail(username)
+                        .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED)));
+
+        Blog blog = blogRepository.findById(blogId)
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_KEY));
+
+        blogInteractionRepository
+                .findByUserAndBlogAndInteractionType(currentUser, blog,
+                        com.example.demo.entity.BlogInteraction.InteractionType.LIKE)
+                .ifPresent(blogInteractionRepository::delete);
+    }
+
     private BlogResponse mapToResponse(Blog blog) {
+        String username = SecurityUtil.getCurrentUsername();
+        User currentUser = null;
+        if (username != null) {
+            currentUser = userRepository.findByUsername(username)
+                    .orElse(null);
+        }
+
+        long likeCount = blogInteractionRepository.countByBlogAndInteractionType(blog,
+                com.example.demo.entity.BlogInteraction.InteractionType.LIKE);
+        long commentCount = commentRepository.countByBlog(blog);
+        boolean isLiked = currentUser != null && blogInteractionRepository.existsByUserAndBlogAndInteractionType(
+                currentUser, blog, com.example.demo.entity.BlogInteraction.InteractionType.LIKE);
+
         return BlogResponse.builder()
                 .id(blog.getId())
                 .expertId(blog.getExpert() != null ? blog.getExpert().getId() : null)
                 .expertName(blog.getExpert() != null && blog.getExpert().getUser() != null
-                        ? blog.getExpert().getUser().getFullName() : null)
+                        ? blog.getExpert().getUser().getFullName()
+                        : null)
                 .categoryId(blog.getCategory() != null ? blog.getCategory().getId() : null)
                 .categoryName(blog.getCategory() != null ? blog.getCategory().getName() : null)
                 .title(blog.getTitle())
@@ -175,10 +275,18 @@ public class BlogService {
                 .content(blog.getContent())
                 .thumbnailUrl(blog.getThumbnailUrl())
                 .viewCount(blog.getViewCount())
+
+                .likeCount(likeCount)
+                .commentCount(commentCount)
+                .isLiked(isLiked)
+
                 .status(blog.getStatus())
                 .createdAt(blog.getCreatedAt())
                 .updatedAt(blog.getUpdatedAt())
+                // Set Author details
+                .authorName(blog.getAuthor() != null ? blog.getAuthor().getFullName() : null)
+                .authorAvatar("https://ui-avatars.com/api/?name="
+                        + (blog.getAuthor() != null ? blog.getAuthor().getFullName() : "User"))
                 .build();
     }
 }
-
