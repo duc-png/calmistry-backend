@@ -9,14 +9,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.util.StringUtils;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/files")
@@ -43,8 +37,9 @@ public class FileController {
             return ApiResponse.<String>builder()
                     .result(fileUrl)
                     .build();
-        } catch (IOException e) {
-            throw new RuntimeException("Upload failed", e);
+        } catch (Exception e) {
+            // Catch all exceptions (IOException, RuntimeException from Cloudinary)
+            throw new RuntimeException("Upload failed: " + e.getMessage(), e);
         }
     }
 }
