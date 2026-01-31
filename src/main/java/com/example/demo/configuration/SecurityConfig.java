@@ -75,6 +75,8 @@ public class SecurityConfig {
         // Fix: Cannot use wildcard with credentials=true
         config.addAllowedOrigin("http://localhost:5173"); // Frontend dev server
         config.addAllowedOrigin("http://localhost:3000"); // Backup port
+        config.addAllowedOrigin("https://www.calmistry.blog"); // Production domain
+        config.addAllowedOrigin("https://calmistry.blog"); // Production domain (naked)
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
         source.registerCorsConfiguration("/**", config);
