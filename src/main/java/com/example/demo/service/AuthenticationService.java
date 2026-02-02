@@ -149,6 +149,9 @@ public class AuthenticationService {
     }
 
     private SignedJWT verifyToken(String token, boolean isRefresh) throws JOSEException, ParseException {
+        if (token == null || token.isBlank()) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
         JWSVerifier verifier = new MACVerifier(SIGNER_KEY.getBytes());
 
         SignedJWT signedJWT = SignedJWT.parse(token);
@@ -202,6 +205,10 @@ public class AuthenticationService {
     }
 
     public void logout(IntrospectRequest request) throws ParseException, JOSEException {
+        if (request.getToken() == null) {
+            log.warn("Logout attempt with null token");
+            return;
+        }
         try {
             var signToken = verifyToken(request.getToken(), true);
 

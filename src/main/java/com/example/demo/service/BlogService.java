@@ -1,11 +1,11 @@
 package com.example.demo.service;
 
 import com.example.demo.dto.request.BlogCreateRequest;
+import com.example.demo.dto.request.BlogUpdateRequest;
 import com.example.demo.dto.response.BlogResponse;
 import com.example.demo.entity.Blog;
 import com.example.demo.dto.response.CategoryResponse;
 import com.example.demo.entity.BlogCategory;
-import com.example.demo.entity.ExpertProfile;
 import com.example.demo.entity.User;
 import com.example.demo.exception.AppException;
 import com.example.demo.exception.ErrorCode;
@@ -113,6 +113,123 @@ public class BlogService {
         return blogRepository.findAll().stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public BlogResponse updateBlog(Long id, BlogUpdateRequest request) {
+        Blog blog = blogRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_KEY));
+
+        User currentUser = getCurrentUser();
+
+        // Permission check: ADMIN or Author
+        boolean isAdmin = currentUser.getRoles().stream().anyMatch(role -> role.getName().equals("ADMIN"));
+
+        // Author check with fallback
+        User author = blog.getAuthor();
+        if (author == null && blog.getExpert() != null) {
+            author = blog.getExpert().getUser();
+        }
+
+        boolean isOwner = author != null && author.getId().equals(currentUser.getId());
+
+        if (!isAdmin && !isOwner) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        if (request.getTitle() != null && !request.getTitle().isBlank()) {
+            blog.setTitle(request.getTitle());
+            // Update slug if title changed
+            String slug = generateSlug(request.getTitle());
+            String finalSlug = slug;
+            int counter = 1;
+            while (blogRepository.findBySlug(finalSlug).isPresent() && !finalSlug.equals(blog.getSlug())) {
+                finalSlug = slug + "-" + counter++;
+            }
+            blog.setSlug(finalSlug);
+        }
+
+        if (request.getContent() != null && !request.getContent().isBlank()) {
+            blog.setContent(request.getContent());
+        }
+
+        if (request.getCategoryId() != null) {
+            BlogCategory category = blogCategoryRepository.findById(request.getCategoryId())
+                    .orElseThrow(() -> new AppException(ErrorCode.INVALID_KEY));
+            blog.setCategory(category);
+        }
+
+        if (request.getImageUrls() != null) {
+            blog.setImageUrls(request.getImageUrls());
+        }
+
+        if (request.getStatus() != null) {
+            try {
+                blog.setStatus(Blog.BlogStatus.valueOf(request.getStatus()));
+            } catch (IllegalArgumentException e) {
+                // Ignore invalid status
+            }
+        }
+
+        return mapToResponse(blogRepository.save(blog));
+    }
+
+    @Transactional
+    public void deleteBlog(Long id) {
+        Blog blog = blogRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_KEY));
+
+        User currentUser = getCurrentUser();
+
+        // Permission check: ADMIN or Author
+        boolean isAdmin = currentUser.getRoles().stream().anyMatch(role -> role.getName().equals("ADMIN"));
+
+        // Author check with fallback
+        User author = blog.getAuthor();
+        if (author == null && blog.getExpert() != null) {
+            author = blog.getExpert().getUser();
+        }
+
+        boolean isOwner = author != null && author.getId().equals(currentUser.getId());
+
+        if (!isAdmin && !isOwner) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        blogRepository.delete(blog);
+    }
+
+    private boolean canManageBlog(Blog blog, User user) {
+        if (user == null)
+            return false;
+
+        boolean isAdmin = user.getRoles().stream()
+                .anyMatch(role -> role.getName().equals("ADMIN"));
+
+        // Ownership check with author fallback
+        User author = blog.getAuthor();
+        if (author == null && blog.getExpert() != null) {
+            author = blog.getExpert().getUser();
+        }
+
+        boolean isOwner = author != null && author.getId().equals(user.getId());
+
+        // Also check if assigned as expert (even if not author)
+        boolean isAssignedExpert = blog.getExpert() != null && blog.getExpert().getUser() != null
+                && blog.getExpert().getUser().getId().equals(user.getId());
+
+        return isAdmin || isOwner || isAssignedExpert;
+    }
+
+    private User getCurrentUser() {
+        String username = SecurityUtil.getCurrentUsername();
+        if (username == null) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
+
+        return userRepository.findByUsername(username)
+                .orElseGet(() -> userRepository.findByEmail(username)
+                        .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED)));
     }
 
     public List<BlogResponse> getBlogsByExpert(Long expertId) {
@@ -262,6 +379,12 @@ public class BlogService {
         boolean isLiked = currentUser != null && blogInteractionRepository.existsByUserAndBlogAndInteractionType(
                 currentUser, blog, com.example.demo.entity.BlogInteraction.InteractionType.LIKE);
 
+        // Calculate author fallback
+        User author = blog.getAuthor();
+        if (author == null && blog.getExpert() != null) {
+            author = blog.getExpert().getUser();
+        }
+
         return BlogResponse.builder()
                 .id(blog.getId())
                 .expertId(blog.getExpert() != null ? blog.getExpert().getId() : null)
@@ -283,10 +406,14 @@ public class BlogService {
                 .status(blog.getStatus())
                 .createdAt(blog.getCreatedAt())
                 .updatedAt(blog.getUpdatedAt())
-                // Set Author details
-                .authorName(blog.getAuthor() != null ? blog.getAuthor().getFullName() : null)
+                // Set Author details with fallback
+                .authorName(author != null ? author.getFullName() : null)
+                .authorId(author != null ? author.getId() : null)
                 .authorAvatar("https://ui-avatars.com/api/?name="
-                        + (blog.getAuthor() != null ? blog.getAuthor().getFullName() : "User"))
+                        + (author != null ? author.getFullName() : "User"))
+                .expertUserId(blog.getExpert() != null && blog.getExpert().getUser() != null
+                        ? blog.getExpert().getUser().getId()
+                        : null)
                 .build();
     }
 }

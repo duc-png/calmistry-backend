@@ -17,7 +17,9 @@ public class BlogResponse {
     Long expertId;
     String expertName; // Keep for backward compatibility
     String authorName;
+    Long authorId;
     String authorAvatar;
+    Long expertUserId; // User ID associated with the expert profile
     Long categoryId;
     String categoryName;
     String title;

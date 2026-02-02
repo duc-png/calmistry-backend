@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.ApiResponse;
 import com.example.demo.dto.request.BlogCreateRequest;
+import com.example.demo.dto.request.BlogUpdateRequest;
 import com.example.demo.dto.request.CommentRequest;
 import com.example.demo.dto.response.BlogResponse;
 import com.example.demo.dto.response.CategoryResponse;
@@ -39,12 +40,31 @@ public class BlogController {
         }
 
         @PutMapping("/{id}/approve")
-        @PreAuthorize("hasAuthority('EXPERT') or hasAuthority('ADMIN')")
+        @PreAuthorize("hasRole('EXPERT') or hasRole('ADMIN')")
         public ResponseEntity<ApiResponse<BlogResponse>> approveBlog(@PathVariable Long id,
                         @RequestParam Blog.BlogStatus status) {
                 BlogResponse response = blogService.approveBlog(id, status);
                 return ResponseEntity.ok(ApiResponse.<BlogResponse>builder()
                                 .result(response)
+                                .build());
+        }
+
+        @PutMapping("/{id}")
+        @PreAuthorize("hasRole('ADMIN') or hasRole('EXPERT')")
+        public ResponseEntity<ApiResponse<BlogResponse>> updateBlog(@PathVariable Long id,
+                        @Valid @RequestBody BlogUpdateRequest request) {
+                BlogResponse response = blogService.updateBlog(id, request);
+                return ResponseEntity.ok(ApiResponse.<BlogResponse>builder()
+                                .result(response)
+                                .build());
+        }
+
+        @DeleteMapping("/{id}")
+        @PreAuthorize("hasRole('ADMIN') or hasRole('EXPERT')")
+        public ResponseEntity<ApiResponse<Void>> deleteBlog(@PathVariable Long id) {
+                blogService.deleteBlog(id);
+                return ResponseEntity.ok(ApiResponse.<Void>builder()
+                                .message("Blog deleted successfully")
                                 .build());
         }
 
