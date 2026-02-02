@@ -23,7 +23,7 @@ public class BlogResponse {
     String title;
     String slug;
     String content;
-    String thumbnailUrl;
+    java.util.List<String> imageUrls;
     Integer viewCount;
     Long likeCount;
     Long commentCount;

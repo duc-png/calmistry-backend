@@ -2,6 +2,7 @@ package com.example.demo.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -23,7 +24,8 @@ public class BlogCreateRequest {
     @NotBlank(message = "Content is required")
     String content;
 
-    String thumbnailUrl;
+    @Size(max = 7, message = "Maximum 7 images allowed")
+    java.util.List<String> imageUrls = new java.util.ArrayList<>();
 
     BlogStatus status;
 

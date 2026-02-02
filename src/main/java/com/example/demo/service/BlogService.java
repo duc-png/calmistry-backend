@@ -66,7 +66,7 @@ public class BlogService {
         blog.setCategory(category);
         blog.setTitle(request.getTitle());
         blog.setContent(request.getContent());
-        blog.setThumbnailUrl(request.getThumbnailUrl());
+        blog.setImageUrls(request.getImageUrls());
 
         // Set status based on role
         if (canAutoPublish) {
@@ -78,7 +78,7 @@ public class BlogService {
             }
 
             blog.setStatus(request.getStatus() != null
-                    ? Blog.BlogStatus.valueOf(request.getStatus().name())
+                    ? Blog.BlogStatus.valueOf(request.getStatus().toString())
                     : Blog.BlogStatus.PUBLISHED);
         } else {
             // User: Always PENDING
@@ -273,7 +273,7 @@ public class BlogService {
                 .title(blog.getTitle())
                 .slug(blog.getSlug())
                 .content(blog.getContent())
-                .thumbnailUrl(blog.getThumbnailUrl())
+                .imageUrls(blog.getImageUrls())
                 .viewCount(blog.getViewCount())
 
                 .likeCount(likeCount)

@@ -36,8 +36,9 @@ public class Blog {
     @Column(name = "content", columnDefinition = "LONGTEXT", nullable = false)
     private String content;
 
-    @Column(name = "thumbnail_url", length = 255)
-    private String thumbnailUrl;
+    @Column(name = "image_urls", columnDefinition = "JSON")
+    @Convert(converter = com.example.demo.converter.StringListConverter.class)
+    private java.util.List<String> imageUrls = new java.util.ArrayList<>();
 
     @Column(name = "view_count")
     private Integer viewCount = 0;
