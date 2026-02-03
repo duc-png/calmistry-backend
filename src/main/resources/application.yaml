@@ -7,8 +7,8 @@ spring:
   datasource:
     url: ${DB_URL:jdbc:mysql://metro.proxy.rlwy.net:24473/calmistry}
     driverClassName: com.mysql.cj.jdbc.Driver
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:vNuRxEsasQqlbOZUsraXWnRGoQIqXkVN}
   jpa:
     database-platform: org.hibernate.dialect.MySQL8Dialect
     hibernate:
@@ -30,23 +30,27 @@ spring:
   ai:
     openai:
       api-key: ${SPRING_AI_KEY}
-      base-url: ${SPRING_AI_BASE_URL}
+      base-url: ${SPRING_AI_BASE_URL:https://ccs.qatthcv.com/}
       chat:
         options:
           model: gpt-5.2
 
 # JWT Configuration
 jwt:
-  signerKey: ${JWT_SIGNER_KEY}
+  signerKey: ${JWT_SIGNER_KEY:wYUihtKXpSs_rDJXC2wdSpL0O03rp7UK7KGk4_GoQkSPaRJ8z3__8hvl_NBOIams3cweOfBvBoyFXceds_VxA}
   valid-duration: 3600 # in second
   refreshable-duration: 36000 # in seconds
 
 # OpenAI Configuration
 openai:
+openai:
   api-key: ${OPENAI_API_KEY}
   model: gpt-5.2
 
+
+
 # Gemini AI Configuration
+gemini:
 gemini:
   api-key: ${GEMINI_API_KEY}
   model: gemini-1.5-flash
@@ -55,6 +59,5 @@ gemini:
 cloudinary:
   cloud-name: ${CLOUDINARY_CLOUD_NAME}
   api-key: ${CLOUDINARY_API_KEY}
-  api-secret: ${CLOUDINARY_API_SECRET}
-
+  api-secret: YjMVc_vvJAewdntYU4j0kFOaEV4
 
