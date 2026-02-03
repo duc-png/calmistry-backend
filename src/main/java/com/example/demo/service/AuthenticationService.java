@@ -145,6 +145,7 @@ public class AuthenticationService {
         return AuthenticationResponse.builder()
                 .token(token)
                 .authenticated(true)
+                .isOnboarded(user.getIsOnboarded() != null && user.getIsOnboarded())
                 .build();
     }
 

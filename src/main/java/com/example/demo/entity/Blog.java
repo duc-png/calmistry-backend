@@ -47,6 +47,13 @@ public class Blog {
     @Column(name = "status")
     private BlogStatus status = BlogStatus.DRAFT;
 
+    @Column(name = "is_featured")
+    private Boolean isFeatured = false;
+
+    public boolean isFeatured() {
+        return isFeatured != null && isFeatured;
+    }
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -64,8 +71,11 @@ public class Blog {
         updatedAt = LocalDateTime.now();
     }
 
-    @OneToMany(mappedBy = "blog", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "blog", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<BlogInteraction> interactions = new HashSet<>();
+
+    @OneToMany(mappedBy = "blog", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Comment> comments = new HashSet<>();
 
     @ManyToOne
     @JoinColumn(name = "user_id")

@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import com.example.demo.dto.request.UserOnboardingRequest;
 import com.example.demo.dto.response.UserResponse;
 import com.example.demo.entity.User;
 import com.example.demo.entity.UserStats;
@@ -68,6 +69,24 @@ public class UserService {
         return mapToResponse(userRepository.save(user));
     }
 
+    @org.springframework.transaction.annotation.Transactional
+    public UserResponse completeOnboarding(UserOnboardingRequest request) {
+        var context = SecurityContextHolder.getContext();
+        String name = context.getAuthentication().getName();
+
+        User user = userRepository.findByUsername(name)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        user.setGender(request.getGender());
+        user.setDateOfBirth(request.getDateOfBirth());
+        user.setHobbies(request.getHobbies() != null ? String.join(", ", request.getHobbies()) : null);
+        user.setMainGoal(request.getMainGoal());
+        user.setPreferredTone(request.getPreferredTone());
+        user.setIsOnboarded(true);
+
+        return mapToResponse(userRepository.save(user));
+    }
+
     private UserResponse mapToResponse(User user) {
         // Need to fetch stats or use default since findAll doesn't fetch stats by
         // default lazy load
@@ -91,6 +110,12 @@ public class UserService {
                 .lastActivityDate(lastActivity)
                 .roles(user.getRoles().stream().map(com.example.demo.entity.Role::getName)
                         .collect(Collectors.toSet()))
+                .isOnboarded(user.getIsOnboarded())
+                .gender(user.getGender())
+                .dateOfBirth(user.getDateOfBirth())
+                .hobbies(user.getHobbies())
+                .mainGoal(user.getMainGoal())
+                .preferredTone(user.getPreferredTone())
                 .build();
     }
 }

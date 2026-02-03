@@ -16,5 +16,6 @@ public class JournalResponse {
     String title;
     String content;
     String mood;
+    String aiResponse;
     LocalDateTime createdAt;
 }

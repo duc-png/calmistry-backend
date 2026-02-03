@@ -3,6 +3,7 @@ package com.example.demo.service;
 import com.example.demo.dto.request.CreateJournalRequest;
 import com.example.demo.dto.request.UpdateJournalRequest;
 import com.example.demo.dto.response.JournalResponse;
+import com.example.demo.dto.response.JournalStatsResponse;
 import com.example.demo.entity.Journal;
 import com.example.demo.entity.User;
 import com.example.demo.exception.AppException;
@@ -28,6 +29,7 @@ public class JournalService {
 
     JournalRepository journalRepository;
     UserRepository userRepository;
+    AiChatService aiChatService;
 
     /**
      * Get current authenticated user
@@ -45,21 +47,12 @@ public class JournalService {
      * TEMP: Works without authentication for testing
      */
     public List<JournalResponse> getJournals(String search, String mood) {
-        try {
-            User user = getCurrentUser();
-            List<Journal> journals = journalRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
-            log.info("Found {} journals for user {}", journals.size(), user.getUsername());
-            return journals.stream()
-                    .map(this::toResponse)
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            // TEMP: No auth context, return all journals
-            log.warn("No authentication, returning all journals for testing");
-            List<Journal> journals = journalRepository.findAll();
-            return journals.stream()
-                    .map(this::toResponse)
-                    .collect(Collectors.toList());
-        }
+        User user = getCurrentUser();
+        List<Journal> journals = journalRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
+        log.info("Found {} journals for user {}", journals.size(), user.getUsername());
+        return journals.stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -87,6 +80,10 @@ public class JournalService {
         journal.setContent(request.getContent());
         journal.setMood(request.getMood());
 
+        // Generate AI Healing Response
+        String aiResponseText = generateAiHealingResponse(request.getTitle(), request.getContent(), request.getMood());
+        journal.setAiResponse(aiResponseText);
+
         journal = journalRepository.save(journal);
 
         return toResponse(journal);
@@ -113,14 +110,15 @@ public class JournalService {
             journal.setMood(request.getMood());
         }
 
+        // Generate/Update AI Healing Response
+        String aiResponseText = generateAiHealingResponse(journal.getTitle(), journal.getContent(), journal.getMood());
+        journal.setAiResponse(aiResponseText);
+
         journal = journalRepository.save(journal);
 
         return toResponse(journal);
     }
 
-    /**
-     * Delete journal (only if user owns it)
-     */
     @Transactional
     public void deleteJournal(Long id) {
         User user = getCurrentUser();
@@ -132,6 +130,50 @@ public class JournalService {
     }
 
     /**
+     * Generate a creative daily writing prompt for the user
+     */
+    public String getAiPrompt() {
+        String prompt = "Hãy đóng vai là một chuyên gia tâm lý Calmistry. " +
+                "Hãy đưa ra 1 câu hỏi gợi mở hoặc 1 chủ đề viết nhật ký ngắn gọn (dưới 30 từ) " +
+                "giúp người dùng khám phá bản thân hoặc cảm thấy bình yên hơn. " +
+                "Chỉ trả lời câu hỏi/chủ đề đó bằng tiếng Việt, không kèm theo lời dẫn.";
+        return aiChatService.chat(prompt);
+    }
+
+    /**
+     * Get mood statistics and AI analysis for the current user
+     */
+    public JournalStatsResponse getJournalStats() {
+        User user = getCurrentUser();
+        List<Journal> journals = journalRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
+
+        long happyCount = journals.stream().filter(j -> "happy".equals(j.getMood())).count();
+        long neutralCount = journals.stream().filter(j -> "neutral".equals(j.getMood())).count();
+        long sadCount = journals.stream().filter(j -> "sad".equals(j.getMood())).count();
+        long total = journals.size();
+
+        String aiAnalysis = "Bạn hiện chưa có đủ dữ liệu nhật ký để AI phân tích. Hãy viết thêm nhé! ❤️";
+
+        if (total > 0) {
+            String prompt = String.format(
+                    "Dữ liệu nhật ký của người dùng: Tổng số bài: %d, Vui vẻ: %d, Bình thường: %d, Buồn: %d. " +
+                            "Hãy phân tích xu hướng tâm trạng này và đưa ra lời khuyên, động viên ngắn gọn (dưới 100 từ). "
+                            +
+                            "Hãy đóng vai là chuyên gia Calmistry, ngôn từ thấu cảm, ấm áp và mang tính định hướng tích cực.",
+                    total, happyCount, neutralCount, sadCount);
+            aiAnalysis = aiChatService.chat(prompt);
+        }
+
+        return JournalStatsResponse.builder()
+                .happyCount(happyCount)
+                .neutralCount(neutralCount)
+                .sadCount(sadCount)
+                .totalEntries(total)
+                .aiAnalysis(aiAnalysis)
+                .build();
+    }
+
+    /**
      * Convert Journal entity to JournalResponse DTO
      */
     private JournalResponse toResponse(Journal journal) {
@@ -140,7 +182,23 @@ public class JournalService {
                 .title(journal.getTitle())
                 .content(journal.getContent())
                 .mood(journal.getMood())
+                .aiResponse(journal.getAiResponse())
                 .createdAt(journal.getCreatedAt())
                 .build();
+    }
+
+    /**
+     * Helper to generate a compassionate AI response for a journal entry
+     */
+    private String generateAiHealingResponse(String title, String content, String mood) {
+        String prompt = String.format(
+                "Nội dung nhật ký: Title: %s, Content: %s, Mood: %s. " +
+                        "Dựa trên nội dung này, hãy viết một lời phản hồi ngắn (2-3 câu), cực kỳ thấu cảm, ấm áp và mang tính chữa lành. "
+                        +
+                        "Hãy đóng vai là một người bạn tri kỷ hoặc chuyên gia tâm lý Calmistry luôn lắng nghe người dùng. "
+                        +
+                        "Ngôn từ phải nhẹ nhàng, chân thành và khích lệ.",
+                title, content, mood);
+        return aiChatService.chat(prompt);
     }
 }

@@ -1,11 +1,10 @@
 package com.example.demo.controller;
 
-
-
 import com.example.demo.dto.ApiResponse;
 import com.example.demo.dto.request.CreateJournalRequest;
 import com.example.demo.dto.request.UpdateJournalRequest;
 import com.example.demo.dto.response.JournalResponse;
+import com.example.demo.dto.response.JournalStatsResponse;
 import com.example.demo.service.JournalService;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
@@ -42,6 +41,14 @@ public class JournalController {
     public ApiResponse<JournalResponse> getJournalById(@PathVariable Long id) {
         var result = journalService.getJournalById(id);
         return ApiResponse.<JournalResponse>builder()
+                .result(result)
+                .build();
+    }
+
+    @GetMapping("/v1/stats")
+    public ApiResponse<JournalStatsResponse> getJournalStats() {
+        var result = journalService.getJournalStats();
+        return ApiResponse.<JournalStatsResponse>builder()
                 .result(result)
                 .build();
     }

@@ -9,8 +9,10 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class AuthenticationResponse {
-    String token;
-    boolean authenticated;
-    boolean isOnboarded;
+public class JournalStatsResponse {
+    long happyCount;
+    long neutralCount;
+    long sadCount;
+    long totalEntries;
+    String aiAnalysis;
 }

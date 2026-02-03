@@ -402,7 +402,7 @@ public class BlogService {
                 .likeCount(likeCount)
                 .commentCount(commentCount)
                 .isLiked(isLiked)
-
+                .isFeatured(blog.isFeatured())
                 .status(blog.getStatus())
                 .createdAt(blog.getCreatedAt())
                 .updatedAt(blog.getUpdatedAt())
@@ -415,5 +415,32 @@ public class BlogService {
                         ? blog.getExpert().getUser().getId()
                         : null)
                 .build();
+    }
+
+    public List<BlogResponse> getFeaturedBlogs() {
+        // Priority 1: blogs explicitly marked as featured
+        List<Blog> featured = blogRepository.findByStatus(Blog.BlogStatus.PUBLISHED).stream()
+                .filter(Blog::isFeatured)
+                .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+                .limit(5)
+                .collect(Collectors.toList());
+
+        // Supplement with trending blogs if needed (based on view count and likes)
+        if (featured.size() < 3) {
+            List<Blog> trending = blogRepository.findByStatus(Blog.BlogStatus.PUBLISHED).stream()
+                    .filter(b -> !featured.contains(b))
+                    .sorted((a, b) -> {
+                        long scoreA = a.getViewCount() + (long) a.getInteractions().size() * 5;
+                        long scoreB = b.getViewCount() + (long) b.getInteractions().size() * 5;
+                        return Long.compare(scoreB, scoreA);
+                    })
+                    .limit(5 - featured.size())
+                    .collect(Collectors.toList());
+            featured.addAll(trending);
+        }
+
+        return featured.stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 }

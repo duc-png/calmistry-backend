@@ -1,5 +1,6 @@
 package com.example.demo.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -9,7 +10,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "chat_rooms", uniqueConstraints = @UniqueConstraint(columnNames = { "user_id", "expert_id" }))
+@Table(name = "chat_rooms")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -20,6 +21,17 @@ public class ChatRoom {
 
     @Column(name = "name")
     private String name;
+
+    @Column(name = "description", length = 500)
+    private String description;
+
+    @ManyToOne
+    @JoinColumn(name = "creator_id")
+    private User creator;
+
+    @ManyToMany
+    @JoinTable(name = "chat_room_members", joinColumns = @JoinColumn(name = "room_id"), inverseJoinColumns = @JoinColumn(name = "user_id"))
+    private Set<User> members = new HashSet<>();
 
     @Enumerated(EnumType.STRING)
     @Column(name = "type")
@@ -37,6 +49,7 @@ public class ChatRoom {
     @Column(name = "status")
     private ChatRoomStatus status = ChatRoomStatus.ACTIVE;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL)
     private Set<ChatMessage> messages = new HashSet<>();
 

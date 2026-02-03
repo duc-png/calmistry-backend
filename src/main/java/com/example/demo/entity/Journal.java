@@ -30,6 +30,9 @@ public class Journal {
     @Column(name = "mood")
     private String mood; // happy, neutral, sad
 
+    @Column(name = "ai_response", columnDefinition = "TEXT")
+    private String aiResponse;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

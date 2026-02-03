@@ -24,4 +24,13 @@ public class AiChatController {
                 .result(response)
                 .build();
     }
+
+    @GetMapping("/history")
+    public ApiResponse<org.springframework.data.domain.Page<com.example.demo.entity.AiChatLog>> getChatHistory(
+            @org.springframework.data.web.PageableDefault(size = 50, sort = "createdAt", direction = org.springframework.data.domain.Sort.Direction.DESC) org.springframework.data.domain.Pageable pageable) {
+        return ApiResponse.<org.springframework.data.domain.Page<com.example.demo.entity.AiChatLog>>builder()
+                .code(1000)
+                .result(aiChatService.getChatHistory(pageable))
+                .build();
+    }
 }

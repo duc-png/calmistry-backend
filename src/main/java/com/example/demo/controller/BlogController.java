@@ -92,6 +92,14 @@ public class BlogController {
                                 .build());
         }
 
+        @GetMapping("/featured")
+        public ResponseEntity<ApiResponse<List<BlogResponse>>> getFeaturedBlogs() {
+                List<BlogResponse> blogs = blogService.getFeaturedBlogs();
+                return ResponseEntity.ok(ApiResponse.<List<BlogResponse>>builder()
+                                .result(blogs)
+                                .build());
+        }
+
         @GetMapping("/expert/{expertId}")
         public ResponseEntity<ApiResponse<List<BlogResponse>>> getBlogsByExpert(@PathVariable Long expertId) {
                 List<BlogResponse> blogs = blogService.getBlogsByExpert(expertId);

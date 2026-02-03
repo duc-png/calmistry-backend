@@ -1,5 +1,6 @@
 package com.example.demo.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -17,6 +18,7 @@ public class ChatMessage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @ManyToOne
     @JoinColumn(name = "room_id", nullable = false)
     private ChatRoom room;
@@ -25,8 +27,11 @@ public class ChatMessage {
     @JoinColumn(name = "sender_id", nullable = false)
     private User sender;
 
-    @Column(name = "message_text", columnDefinition = "TEXT", nullable = false)
+    @Column(name = "message_text", columnDefinition = "TEXT")
     private String messageText;
+
+    @Column(name = "media_url", length = 1000)
+    private String mediaUrl;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "message_type")

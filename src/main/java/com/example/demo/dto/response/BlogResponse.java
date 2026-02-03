@@ -30,6 +30,7 @@ public class BlogResponse {
     Long likeCount;
     Long commentCount;
     boolean isLiked;
+    boolean isFeatured;
     Blog.BlogStatus status;
     LocalDateTime createdAt;
     LocalDateTime updatedAt;

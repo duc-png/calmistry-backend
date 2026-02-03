@@ -1,5 +1,6 @@
 package com.example.demo.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -38,7 +39,27 @@ public class User {
     private String fcmToken;
 
     @Column(name = "is_active")
+    @Builder.Default
     private Boolean isActive = true;
+
+    @Column(name = "gender", length = 20)
+    private String gender;
+
+    @Column(name = "date_of_birth")
+    private java.time.LocalDate dateOfBirth;
+
+    @Column(name = "hobbies", columnDefinition = "TEXT")
+    private String hobbies;
+
+    @Column(name = "main_goal", length = 255)
+    private String mainGoal;
+
+    @Column(name = "preferred_tone", length = 50)
+    private String preferredTone;
+
+    @Column(name = "is_onboarded")
+    @Builder.Default
+    private Boolean isOnboarded = false;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -53,30 +74,39 @@ public class User {
     @Builder.Default
     private Set<Role> roles = new HashSet<>();
 
+    @JsonIgnore
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private ExpertProfile expertProfile;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private Set<BlogInteraction> blogInteractions = new HashSet<>();
 
+    @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private Set<SleepSession> sleepSessions = new HashSet<>();
 
+    @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private Set<MentalSession> mentalSessions = new HashSet<>();
 
+    @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private Set<Journal> journals = new HashSet<>();
 
+    @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private Set<ChatRoom> chatRoomsAsUser = new HashSet<>();
 
+    @JsonIgnore
     @OneToMany(mappedBy = "sender", cascade = CascadeType.ALL)
     private Set<ChatMessage> sentMessages = new HashSet<>();
 
+    @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private Set<AiChatLog> aiChatLogs = new HashSet<>();
 
+    @JsonIgnore
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private UserStats userStats;
 }

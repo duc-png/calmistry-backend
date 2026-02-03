@@ -19,4 +19,10 @@ public class UserResponse {
     Integer currentStreak;
     LocalDate lastActivityDate;
     java.util.Set<String> roles;
+    Boolean isOnboarded;
+    String gender;
+    LocalDate dateOfBirth;
+    String hobbies;
+    String mainGoal;
+    String preferredTone;
 }
