@@ -29,7 +29,7 @@ spring:
     name: spring-ai-demo
   ai:
     openai:
-      api-key: ${SPRING_AI_KEY}
+      api-key: ${SPRING_AI_KEY:}
       base-url: ${SPRING_AI_BASE_URL:https://ccs.qatthcv.com/}
       chat:
         options:
@@ -37,24 +37,24 @@ spring:
 
 # JWT Configuration
 jwt:
-  signerKey: ${JWT_SIGNER_KEY}
+  signerKey: ${JWT_SIGNER_KEY:}
   valid-duration: 3600 # in second
   refreshable-duration: 36000 # in seconds
 
 # OpenAI Configuration
 openai:
-  api-key: ${OPENAI_API_KEY}
+  api-key: ${OPENAI_API_KEY:}
   model: gpt-5.2
 
 
 
 # Gemini AI Configuration
 gemini:
-  api-key: ${GEMINI_API_KEY}
+  api-key: ${GEMINI_API_KEY:}
   model: gemini-1.5-flash
 
 # Cloudinary Configuration
 cloudinary:
-  cloud-name: ${CLOUDINARY_CLOUD_NAME}
-  api-key: ${CLOUDINARY_API_KEY}
-  api-secret: ${CLOUDINARY_API_SECRET}
+  cloud-name: ${CLOUDINARY_CLOUD_NAME:}
+  api-key: ${CLOUDINARY_API_KEY:}
+  api-secret: ${CLOUDINARY_API_SECRET:}
