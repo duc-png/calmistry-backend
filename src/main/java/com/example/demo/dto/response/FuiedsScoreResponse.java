@@ -32,4 +32,5 @@ public class FuiedsScoreResponse {
     private Boolean isGoodEnough;
     private String status; // "Rất tốt", "Tốt", "Tạm ổn", "Nguy cơ"
     private String statusColor; // Color code for UI
+    private Integer currentStreak;
 }

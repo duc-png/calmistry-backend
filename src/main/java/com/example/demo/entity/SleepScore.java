@@ -34,8 +34,19 @@ public class SleepScore {
     @Column(name = "status")
     private SleepStatus status;
 
+    @Column(name = "category_code")
+    private String categoryCode;
+
+    @Column(name = "category_title")
+    private String categoryTitle;
+
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
+
+    @Column(name = "advice", columnDefinition = "TEXT")
+    private String advice;
+
     public enum SleepStatus {
         POOR, FAIR, GOOD, EXCELLENT
     }
 }
-

@@ -21,7 +21,9 @@ public enum ErrorCode {
     INVALID_DOB(1008, "Your age must be at least {min}", HttpStatus.BAD_REQUEST),
     INVALID_CREDENTIALS(1009, "Invalid credentials, please try again.", HttpStatus.BAD_REQUEST),
     PASSWORD_EXISTED(1010, "Password existed", HttpStatus.BAD_REQUEST),
-    ROLE_NOT_FOUND(1011, "Role not found", HttpStatus.INTERNAL_SERVER_ERROR);
+    ROLE_NOT_FOUND(1011, "Role not found", HttpStatus.INTERNAL_SERVER_ERROR),
+    SLEEP_SESSION_ALREADY_EXISTS(1012, "Bạn đã thực hiện đánh giá giấc ngủ ngày hôm nay rồi.", HttpStatus.BAD_REQUEST),
+    FUIEDS_SESSION_ALREADY_EXISTS(1013, "Bạn đã hoàn thành đánh giá tâm trạng hôm nay rồi!", HttpStatus.BAD_REQUEST);
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {
         this.code = code;

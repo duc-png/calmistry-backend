@@ -14,11 +14,13 @@ import org.springframework.stereotype.Controller;
 public class ChatController {
 
     private final ChatService chatService;
+    private final org.springframework.messaging.simp.SimpMessagingTemplate messagingTemplate;
 
     @MessageMapping("/chat.sendMessage")
-    @SendTo("/topic/public")
-    public ChatMessage sendMessage(@Payload ChatMessage chatMessage) {
-        return chatService.saveMessage(chatMessage);
+    public void sendMessage(@Payload ChatMessage chatMessage) {
+        ChatMessage savedMessage = chatService.saveMessage(chatMessage);
+        Long roomId = chatMessage.getRoom().getId();
+        messagingTemplate.convertAndSend("/topic/room." + roomId, savedMessage);
     }
 
     @MessageMapping("/chat.addUser")

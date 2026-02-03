@@ -29,81 +29,81 @@ import java.util.stream.Collectors;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AiChatService {
 
-    AiChatLogRepository aiChatLogRepository;
-    UserRepository userRepository;
-    GeminiService geminiService;
+        AiChatLogRepository aiChatLogRepository;
+        UserRepository userRepository;
+        GeminiService geminiService;
 
-    /**
-     * Send message to AI and save conversation
-     */
-    @Transactional
-    public ChatResponse sendMessage(ChatRequest request) {
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
+        /**
+         * Send message to AI and save conversation
+         */
+        @Transactional
+        public ChatResponse sendMessage(ChatRequest request) {
+                var authentication = SecurityContextHolder.getContext().getAuthentication();
+                String username = authentication.getName();
 
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                User user = userRepository.findByUsername(username)
+                                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-        // Get AI response from Gemini
-        String aiResponse = geminiService.generateResponse(request.getMessage());
+                // Get AI response from Gemini
+                String aiResponse = geminiService.generateResponse(request.getMessage());
 
-        // Save to database
-        AiChatLog chatLog = new AiChatLog();
-        chatLog.setUser(user);
-        chatLog.setUserMessage(request.getMessage());
-        chatLog.setAiResponse(aiResponse);
+                // Save to database
+                AiChatLog chatLog = new AiChatLog();
+                chatLog.setUser(user);
+                chatLog.setUserMessage(request.getMessage());
+                chatLog.setAiResponse(aiResponse);
 
-        chatLog = aiChatLogRepository.save(chatLog);
+                chatLog = aiChatLogRepository.save(chatLog);
 
-        return toResponse(chatLog);
-    }
+                return toResponse(chatLog);
+        }
 
-    /**
-     * Get chat history for current user
-     */
-    public ChatHistoryResponse getChatHistory(int page, int size) {
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
+        /**
+         * Get chat history for current user
+         */
+        public ChatHistoryResponse getChatHistory(int page, int size) {
+                var authentication = SecurityContextHolder.getContext().getAuthentication();
+                String username = authentication.getName();
 
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                User user = userRepository.findByUsername(username)
+                                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-        Pageable pageable = PageRequest.of(page, size);
-        Page<AiChatLog> logsPage = aiChatLogRepository.findByUserIdOrderByCreatedAtDesc(user.getId(), pageable);
+                Pageable pageable = PageRequest.of(page, size);
+                Page<AiChatLog> logsPage = aiChatLogRepository.findByUserIdOrderByCreatedAtDesc(user.getId(), pageable);
 
-        List<ChatResponse> messages = logsPage.getContent().stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+                List<ChatResponse> messages = logsPage.getContent().stream()
+                                .map(this::toResponse)
+                                .collect(Collectors.toList());
 
-        return ChatHistoryResponse.builder()
-                .messages(messages)
-                .totalMessages((int) logsPage.getTotalElements())
-                .build();
-    }
+                return ChatHistoryResponse.builder()
+                                .messages(messages)
+                                .totalMessages((int) logsPage.getTotalElements())
+                                .build();
+        }
 
-    /**
-     * Clear all chat history for current user
-     */
-    @Transactional
-    public void clearHistory() {
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
+        /**
+         * Clear all chat history for current user
+         */
+        @Transactional
+        public void clearHistory() {
+                var authentication = SecurityContextHolder.getContext().getAuthentication();
+                String username = authentication.getName();
 
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                User user = userRepository.findByUsername(username)
+                                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-        aiChatLogRepository.deleteByUserId(user.getId());
-    }
+                aiChatLogRepository.deleteByUserId(user.getId());
+        }
 
-    /**
-     * Convert AiChatLog entity to ChatResponse DTO
-     */
-    private ChatResponse toResponse(AiChatLog chatLog) {
-        return ChatResponse.builder()
-                .id(chatLog.getId())
-                .userMessage(chatLog.getUserMessage())
-                .aiResponse(chatLog.getAiResponse())
-                .createdAt(chatLog.getCreatedAt())
-                .build();
-    }
+        /**
+         * Convert AiChatLog entity to ChatResponse DTO
+         */
+        private ChatResponse toResponse(AiChatLog chatLog) {
+                return ChatResponse.builder()
+                                .id(chatLog.getId())
+                                .userMessage(chatLog.getUserMessage())
+                                .aiResponse(chatLog.getAiResponse())
+                                .createdAt(chatLog.getCreatedAt())
+                                .build();
+        }
 }

@@ -24,8 +24,8 @@ public interface FuiedsResponseRepository extends JpaRepository<FuiedsResponse, 
     List<FuiedsResponse> findByUserAndResponseDateAfter(User user, LocalDate startDate);
 
     // Get last 3 responses before a specific date for EMA calculation
-    @Query(value = "SELECT * FROM fuieds_responses f WHERE f.user_id = :#{#user.id} AND f.response_date < :beforeDate ORDER BY f.response_date DESC LIMIT 3", nativeQuery = true)
-    List<FuiedsResponse> findTop3ByUserAndBeforeDate(User user, LocalDate beforeDate);
+    @Query(value = "SELECT * FROM fuieds_responses f WHERE f.user_id = :userId AND f.response_date < :beforeDate ORDER BY f.response_date DESC LIMIT 3", nativeQuery = true)
+    List<FuiedsResponse> findTop3ByUserAndBeforeDate(Long userId, LocalDate beforeDate);
 
     // Count consecutive "good enough" days
     @Query("SELECT COUNT(f) FROM FuiedsResponse f WHERE f.user = :user AND f.isGoodEnough = true AND f.responseDate >= :startDate")

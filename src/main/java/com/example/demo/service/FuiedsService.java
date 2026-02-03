@@ -24,6 +24,7 @@ public class FuiedsService {
 
     private final FuiedsResponseRepository fuiedsResponseRepository;
     private final UserRepository userRepository;
+    private final com.example.demo.repository.UserStatsRepository userStatsRepository;
 
     @PostConstruct
     public void init() {
@@ -53,7 +54,8 @@ public class FuiedsService {
         // Check if already submitted today
         fuiedsResponseRepository.findByUserAndResponseDate(user, today)
                 .ifPresent(existing -> {
-                    throw new RuntimeException("Bạn đã hoàn thành đánh giá hôm nay rồi!");
+                    throw new com.example.demo.exception.AppException(
+                            com.example.demo.exception.ErrorCode.FUIEDS_SESSION_ALREADY_EXISTS);
                 });
 
         // Normalize answers to 0-100 scale
@@ -94,6 +96,7 @@ public class FuiedsService {
                 .build();
 
         response = fuiedsResponseRepository.save(response);
+        updateStreak(user, today);
 
         log.info("FUIEDS response submitted for user {}: score={}, smoothed={}, goodEnough={}",
                 user.getUsername(), rawScore, smoothedScore, isGoodEnough);
@@ -158,7 +161,7 @@ public class FuiedsService {
     private Double calculateSmoothedScore(User user, Double todayScore, LocalDate today) {
         // Get last 3 scores before today
         List<FuiedsResponse> recentResponses = fuiedsResponseRepository
-                .findTop3ByUserAndBeforeDate(user, today);
+                .findTop3ByUserAndBeforeDate(user.getId(), today);
 
         if (recentResponses.isEmpty()) {
             // First time - no smoothing
@@ -201,6 +204,11 @@ public class FuiedsService {
         String status = getStatusText(entity.getSmoothedScore());
         String color = getStatusColor(entity.getSmoothedScore());
 
+        Integer streak = 0;
+        if (entity.getUser().getUserStats() != null) {
+            streak = entity.getUser().getUserStats().getCurrentStreak();
+        }
+
         return FuiedsScoreResponse.builder()
                 .id(entity.getId())
                 .date(entity.getResponseDate())
@@ -215,6 +223,7 @@ public class FuiedsService {
                 .isGoodEnough(entity.getIsGoodEnough())
                 .status(status)
                 .statusColor(color)
+                .currentStreak(streak)
                 .build();
     }
 
@@ -252,5 +261,32 @@ public class FuiedsService {
         String username = authentication.getName();
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    /**
+     * Update user streak based on last activity date
+     */
+    private void updateStreak(User user, LocalDate today) {
+        com.example.demo.entity.UserStats stats = userStatsRepository.findByUser_Id(user.getId())
+                .orElseGet(() -> {
+                    com.example.demo.entity.UserStats newStats = new com.example.demo.entity.UserStats();
+                    newStats.setId(user.getId());
+                    newStats.setUser(user);
+                    return newStats;
+                });
+
+        LocalDate lastActivity = stats.getLastActivityDate();
+
+        if (lastActivity == null) {
+            stats.setCurrentStreak(1);
+        } else if (lastActivity.equals(today.minusDays(1))) {
+            stats.setCurrentStreak(stats.getCurrentStreak() + 1);
+        } else if (!lastActivity.equals(today)) {
+            stats.setCurrentStreak(1);
+        }
+
+        stats.setLastActivityDate(today);
+        stats.setTotalPoints((stats.getTotalPoints() == null ? 0 : stats.getTotalPoints()) + 10);
+        userStatsRepository.save(stats);
     }
 }

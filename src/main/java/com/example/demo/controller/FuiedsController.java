@@ -32,23 +32,18 @@ public class FuiedsController {
          * Submit daily FUIEDS quiz response
          */
         @PostMapping("/submit")
-        public ResponseEntity<ApiResponse<FuiedsScoreResponse>> submitResponse(
+        public ApiResponse<FuiedsScoreResponse> submitResponse(
                         @RequestBody SubmitFuiedsRequest request) {
+                log.info("📊 Submitting FUIEDS response: {}", request);
                 try {
-                        log.info("📊 Submitting FUIEDS response");
                         FuiedsScoreResponse response = fuiedsService.submitResponse(request);
-                        return ResponseEntity.ok(
-                                        ApiResponse.<FuiedsScoreResponse>builder()
-                                                        .code(1000)
-                                                        .result(response)
-                                                        .build());
-                } catch (RuntimeException e) {
-                        log.error("Error submitting FUIEDS response: {}", e.getMessage());
-                        return ResponseEntity.badRequest()
-                                        .body(ApiResponse.<FuiedsScoreResponse>builder()
-                                                        .code(400)
-                                                        .message(e.getMessage())
-                                                        .build());
+                        return ApiResponse.<FuiedsScoreResponse>builder()
+                                        .code(1000)
+                                        .result(response)
+                                        .build();
+                } catch (Exception e) {
+                        log.error("❌ FUIEDS Controller Error: {} - {}", e.getClass().getSimpleName(), e.getMessage());
+                        throw e;
                 }
         }
 

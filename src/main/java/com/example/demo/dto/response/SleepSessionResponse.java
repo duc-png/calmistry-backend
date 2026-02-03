@@ -24,6 +24,9 @@ public class SleepSessionResponse {
     BigDecimal sleepEfficiencyPercent;
     Integer finalScore100;
     String status; // POOR, FAIR, GOOD, EXCELLENT
+    String categoryTitle;
+    String description;
+    String advice;
 
     // Answers
     List<AnswerResponse> answers;

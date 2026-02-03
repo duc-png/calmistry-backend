@@ -28,5 +28,6 @@ public class SleepHistoryResponse {
         LocalDate recordDate;
         Integer finalScore100;
         String status;
+        String categoryTitle;
     }
 }

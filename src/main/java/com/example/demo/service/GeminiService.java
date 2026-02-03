@@ -18,10 +18,10 @@ import java.util.Map;
 @Service
 public class GeminiService {
 
-    @Value("${spring.ai.openai.api-key}")
+    @Value("${gemini.api-key}")
     private String apiKey;
 
-    @Value("${spring.ai.openai.chat.options.model:gemini-1.5-flash}")
+    @Value("${gemini.model:gemini-1.5-flash}")
     private String model;
 
     private final RestTemplate restTemplate = new RestTemplate();
@@ -43,7 +43,7 @@ public class GeminiService {
         try {
             // Use native Gemini endpoint
             String url = String.format(
-                    "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s",
+                    "https://generativelanguage.googleapis.com/v1/models/%s:generateContent?key=%s",
                     model, apiKey);
 
             // Build request body

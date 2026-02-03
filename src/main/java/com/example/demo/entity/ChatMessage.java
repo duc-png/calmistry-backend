@@ -35,6 +35,9 @@ public class ChatMessage {
     @Column(name = "is_read")
     private Boolean isRead = false;
 
+    @Column(name = "is_anonymous")
+    private Boolean isAnonymous = false;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -47,4 +50,3 @@ public class ChatMessage {
         TEXT, IMAGE, SYSTEM
     }
 }
-
