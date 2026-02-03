@@ -24,7 +24,8 @@ public class BlogCreateRequest {
     @NotBlank(message = "Content is required")
     String content;
 
-    @Size(max = 7, message = "Maximum 7 images allowed")
+    @Builder.Default
+    @Size(max = 20, message = "Maximum 20 images allowed")
     java.util.List<String> imageUrls = new java.util.ArrayList<>();
 
     BlogStatus status;

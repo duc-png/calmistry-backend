@@ -19,7 +19,7 @@ public class BlogUpdateRequest {
     Long categoryId;
 
     @Builder.Default
-    @Size(max = 7, message = "Maximum 7 images allowed")
+    @Size(max = 20, message = "Maximum 20 images allowed")
     List<String> imageUrls = new ArrayList<>();
 
     String status; // PUBLISHED, PENDING, etc.

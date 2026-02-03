@@ -46,7 +46,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(request -> request
                         // Public endpoints
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/blogs/**").permitAll() // Allow all GET requests to blogs
+                        .requestMatchers(HttpMethod.GET, "/blogs/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/workshops/**").permitAll()
                         // Swagger UI - Explicitly permit all variations
                         .requestMatchers(
                                 "/swagger-ui/**",
