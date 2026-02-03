@@ -55,6 +55,6 @@ gemini:
 cloudinary:
   cloud-name: ${CLOUDINARY_CLOUD_NAME:dculsqafi}
   api-key: ${CLOUDINARY_API_KEY:885716972975153}
-  api-secret: YjMVc_vvJAewdntYU4j0kFOaEV4 
+  api-secret: YjMVc_vvJAewdntYU4j0kFOaEV4
 
 
