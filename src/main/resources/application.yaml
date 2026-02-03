@@ -29,7 +29,7 @@ spring:
     name: spring-ai-demo
   ai:
     openai:
-      api-key: ${SPRING_AI_KEY:sk-dummy-key-to-bypass-startup-check}
+      api-key: ${OPENAI_API_KEY:sk-dummy-key-to-bypass-startup-check}
       base-url: ${SPRING_AI_BASE_URL:}
       chat:
         options:
