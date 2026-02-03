@@ -43,14 +43,12 @@ jwt:
 
 # OpenAI Configuration
 openai:
-openai:
   api-key: ${OPENAI_API_KEY}
   model: gpt-5.2
 
 
 
 # Gemini AI Configuration
-gemini:
 gemini:
   api-key: ${GEMINI_API_KEY}
   model: gemini-1.5-flash
