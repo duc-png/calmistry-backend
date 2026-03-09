@@ -19,10 +19,10 @@ import java.util.Map;
 @Service
 public class OpenAiService {
 
-    @Value("${openai.api-key}")
+    @Value("${spring.ai.openai.api-key}")
     private String apiKey;
 
-    @Value("${openai.model:gpt-4o}")
+    @Value("${spring.ai.openai.chat.options.model:gpt-4o}")
     private String model;
 
     private final RestTemplate restTemplate = new RestTemplate();

@@ -23,8 +23,14 @@ public class User {
     @Column(name = "username", unique = true, nullable = false, length = 50)
     private String username;
 
-    @Column(name = "password", nullable = false)
+    @Column(name = "password")
     private String password;
+
+    @Column(name = "google_id", unique = true)
+    private String googleId;
+
+    @Column(name = "avatar_url", length = 500)
+    private String avatarUrl;
 
     @Column(name = "email", unique = true, nullable = false, length = 100)
     private String email;
@@ -63,6 +69,9 @@ public class User {
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    @Column(name = "last_login_date")
+    private LocalDateTime lastLoginDate;
 
     @PrePersist
     protected void onCreate() {

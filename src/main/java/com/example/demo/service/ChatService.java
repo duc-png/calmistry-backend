@@ -20,12 +20,22 @@ public class ChatService {
 
     @Transactional
     public ChatMessage saveMessage(ChatMessage message) {
-        // Ensure room exists or get default public room
-        // For simplicity, we assume room ID 1 is the "Public" room for now
-        // In a real app, you'd fetch the room based on message.getRoom().getId()
+        // Fetch persistent entities using IDs from payload
+        if (message.getRoom() == null || message.getRoom().getId() == null) {
+            throw new IllegalArgumentException("Chat Room ID is required");
+        }
+        if (message.getSender() == null || message.getSender().getId() == null) {
+            throw new IllegalArgumentException("Sender ID is required");
+        }
 
-        // This is a simplified save. Ideally, you fetch persistent entities
-        // using the IDs from the incoming message payload to ensure consistency.
+        ChatRoom room = chatRoomRepository.findById(message.getRoom().getId())
+                .orElseThrow(() -> new RuntimeException("ChatRoom not found: " + message.getRoom().getId()));
+
+        User sender = userRepository.findById(message.getSender().getId())
+                .orElseThrow(() -> new RuntimeException("User not found: " + message.getSender().getId()));
+
+        message.setRoom(room);
+        message.setSender(sender);
 
         return chatMessageRepository.save(message);
     }

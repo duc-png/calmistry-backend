@@ -12,6 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 @Service
@@ -23,7 +25,7 @@ public class ChatRoomService {
     private final ChatMessageRepository chatMessageRepository;
     private final UserRepository userRepository;
 
-    public List<ChatMessage> getMessages(Long roomId) {
+    public List<ChatMessage> getMessages(Long roomId, int page, int size) {
         ChatRoom room = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new RuntimeException("Room not found"));
 
@@ -34,7 +36,8 @@ public class ChatRoomService {
                 chatRoomRepository.save(room);
             }
         }
-        return chatMessageRepository.findByRoomIdOrderByCreatedAtAsc(roomId);
+        Pageable pageable = PageRequest.of(page, size);
+        return chatMessageRepository.findByRoomIdOrderByCreatedAtDesc(roomId, pageable);
     }
 
     public ChatRoom createRoom(ChatRoomRequest request) {

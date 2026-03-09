@@ -80,11 +80,26 @@ public class JournalService {
         journal.setContent(request.getContent());
         journal.setMood(request.getMood());
 
-        // Generate AI Healing Response
-        String aiResponseText = generateAiHealingResponse(request.getTitle(), request.getContent(), request.getMood());
-        journal.setAiResponse(aiResponseText);
-
         journal = journalRepository.save(journal);
+
+        // Generate AI Healing Response asynchronously to prevent blocking response
+        final Long journalId = journal.getId();
+        final String title = request.getTitle();
+        final String content = request.getContent();
+        final String mood = request.getMood();
+
+        java.util.concurrent.CompletableFuture.runAsync(() -> {
+            try {
+                String aiResponseText = generateAiHealingResponse(title, content, mood);
+                Journal savedJournal = journalRepository.findById(journalId).orElse(null);
+                if (savedJournal != null) {
+                    savedJournal.setAiResponse(aiResponseText);
+                    journalRepository.save(savedJournal);
+                }
+            } catch (Exception e) {
+                log.error("Error generating AI response for journal " + journalId, e);
+            }
+        });
 
         return toResponse(journal);
     }
@@ -110,11 +125,26 @@ public class JournalService {
             journal.setMood(request.getMood());
         }
 
-        // Generate/Update AI Healing Response
-        String aiResponseText = generateAiHealingResponse(journal.getTitle(), journal.getContent(), journal.getMood());
-        journal.setAiResponse(aiResponseText);
-
         journal = journalRepository.save(journal);
+
+        // Generate AI Healing Response asynchronously
+        final Long journalId = journal.getId();
+        final String title = journal.getTitle();
+        final String content = journal.getContent();
+        final String mood = journal.getMood();
+
+        java.util.concurrent.CompletableFuture.runAsync(() -> {
+            try {
+                String aiResponseText = generateAiHealingResponse(title, content, mood);
+                Journal savedJournal = journalRepository.findById(journalId).orElse(null);
+                if (savedJournal != null) {
+                    savedJournal.setAiResponse(aiResponseText);
+                    journalRepository.save(savedJournal);
+                }
+            } catch (Exception e) {
+                log.error("Error generating AI response for journal " + journalId, e);
+            }
+        });
 
         return toResponse(journal);
     }

@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.ApiResponse;
 import com.example.demo.dto.request.AuthenticationRequest;
+import com.example.demo.dto.request.GoogleLoginRequest;
 import com.example.demo.dto.request.IntrospectRequest;
 import com.example.demo.dto.request.UserRegistrationRequest;
 import com.example.demo.dto.response.AuthenticationResponse;
@@ -49,6 +50,19 @@ public class AuthenticationController {
     ApiResponse<AuthenticationResponse> login(@RequestBody AuthenticationRequest request) {
         log.info("🔐 Login request for email: {}", request.getEmail());
         var result = authenticationService.authenticate(request);
+        return ApiResponse.<AuthenticationResponse>builder()
+                .code(1000)
+                .result(result)
+                .build();
+    }
+
+    /**
+     * Login with Google
+     */
+    @PostMapping("/google")
+    ApiResponse<AuthenticationResponse> loginWithGoogle(@RequestBody GoogleLoginRequest request) {
+        log.info("🔐 Google login request received");
+        var result = authenticationService.authenticateWithGoogle(request);
         return ApiResponse.<AuthenticationResponse>builder()
                 .code(1000)
                 .result(result)

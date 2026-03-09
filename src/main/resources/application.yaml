@@ -48,4 +48,6 @@ cloudinary:
   api-key: 885716972975153
   api-secret: YjMVc_vvJAewdntYU4j0kFOaEV4
 
-
+# Google OAuth2 Configuration
+google:
+  client-id: ${GOOGLE_CLIENT_ID:912782731214-6r1cluvt19kju3h4u314j64kn1t4p2it.apps.googleusercontent.com}

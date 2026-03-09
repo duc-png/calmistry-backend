@@ -24,6 +24,7 @@ public class SecurityConfig {
     private final String[] PUBLIC_ENDPOINTS = {
             "/users", "/auth/token", "/auth/introspect", "/auth/logout", "/auth/refresh",
             "/auth/register", // User registration endpoint
+            "/auth/google", // Google login endpoint
             "/auth/outbound/authentication", "/ws/**", "/journals/**", // TEMP: Testing without auth
             "/files/**", // Public File Access
             // Public Blog Access

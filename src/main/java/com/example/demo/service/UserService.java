@@ -35,17 +35,25 @@ public class UserService {
         User user = userRepository.findByUsername(name)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
+        // Update last login date if it's a new day or null
+        if (user.getLastLoginDate() == null
+                || user.getLastLoginDate().toLocalDate().isBefore(java.time.LocalDate.now())) {
+            user.setLastLoginDate(java.time.LocalDateTime.now());
+            user = userRepository.save(user);
+        }
+
         // Get or Create Stats
+        final User finalUser = user;
         UserStats stats = userStatsRepository.findByUser_Id(user.getId())
                 .orElseGet(() -> {
                     UserStats newStats = new UserStats();
-                    newStats.setUser(user);
+                    newStats.setUser(finalUser);
                     newStats.setTotalPoints(0);
                     newStats.setCurrentStreak(0);
                     return userStatsRepository.save(newStats);
                 });
 
-        return mapToResponse(user);
+        return mapToResponse(finalUser);
     }
 
     @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
@@ -116,6 +124,8 @@ public class UserService {
                 .hobbies(user.getHobbies())
                 .mainGoal(user.getMainGoal())
                 .preferredTone(user.getPreferredTone())
+                .createdAt(user.getCreatedAt())
+                .lastLoginDate(user.getLastLoginDate())
                 .build();
     }
 }

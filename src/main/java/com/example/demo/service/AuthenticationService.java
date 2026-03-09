@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.dto.request.AuthenticationRequest;
+import com.example.demo.dto.request.GoogleLoginRequest;
 import com.example.demo.dto.request.IntrospectRequest;
 import com.example.demo.dto.request.UserRegistrationRequest;
 import com.example.demo.dto.response.AuthenticationResponse;
@@ -13,6 +14,10 @@ import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.InvalidatedTokenRepository;
 import com.example.demo.repository.RoleRepository;
 import com.example.demo.repository.UserRepository;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
@@ -30,9 +35,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.text.ParseException;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.Date;
 import java.util.StringJoiner;
 import java.util.UUID;
@@ -58,6 +66,10 @@ public class AuthenticationService {
     @NonFinal
     @Value("${jwt.refreshable-duration}")
     protected long REFRESHABLE_DURATION;
+
+    @NonFinal
+    @Value("${google.client-id}")
+    protected String GOOGLE_CLIENT_ID;
 
     @NonFinal
     protected final String GRANT_TYPE = "authorization_code";
@@ -225,6 +237,86 @@ public class AuthenticationService {
             invalidatedTokenRepository.save(invalidatedToken);
         } catch (AppException e) {
             log.info("Token already expired or invalid");
+        }
+    }
+
+    /**
+     * Authenticate with Google ID Token
+     */
+    @Transactional
+    public AuthenticationResponse authenticateWithGoogle(GoogleLoginRequest request) {
+        log.info("🔐 [Google Login] Verifying Google ID token...");
+
+        try {
+            // Verify Google ID token
+            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
+                    new NetHttpTransport(), GsonFactory.getDefaultInstance())
+                    .setAudience(Collections.singletonList(GOOGLE_CLIENT_ID))
+                    .build();
+
+            GoogleIdToken idToken = verifier.verify(request.getIdToken());
+            if (idToken == null) {
+                log.error("❌ [Google Login] Invalid Google ID token");
+                throw new AppException(ErrorCode.INVALID_CREDENTIALS);
+            }
+
+            GoogleIdToken.Payload payload = idToken.getPayload();
+            String googleId = payload.getSubject();
+            String email = payload.getEmail();
+            String fullName = (String) payload.get("name");
+            String pictureUrl = (String) payload.get("picture");
+
+            log.info("✅ [Google Login] Token verified. Email: {}, Name: {}", email, fullName);
+
+            // Find existing user by googleId or email
+            User user = userRepository.findByEmail(email).orElse(null);
+
+            if (user == null) {
+                // Create new user from Google account
+                log.info("👤 [Google Login] Creating new user for: {}", email);
+                user = User.builder()
+                        .username(email) // Use email as username
+                        .email(email)
+                        .fullName(fullName)
+                        .googleId(googleId)
+                        .avatarUrl(pictureUrl)
+                        .createdAt(LocalDateTime.now())
+                        .build();
+
+                User savedUser = userRepository.save(user);
+
+                // Assign default USER role
+                Role userRole = roleRepository.findByName("USER")
+                        .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+                savedUser.getRoles().add(userRole);
+                user = userRepository.save(savedUser);
+
+                log.info("✅ [Google Login] New user created with email: {}", email);
+            } else {
+                // Update Google info if needed
+                if (user.getGoogleId() == null) {
+                    user.setGoogleId(googleId);
+                }
+                if (pictureUrl != null) {
+                    user.setAvatarUrl(pictureUrl);
+                }
+                user = userRepository.save(user);
+                log.info("✅ [Google Login] Existing user found: {}", email);
+            }
+
+            // Generate JWT token
+            var token = generateToken(user);
+            log.info("🎫 [Google Login] JWT generated for: {}", user.getUsername());
+
+            return AuthenticationResponse.builder()
+                    .token(token)
+                    .authenticated(true)
+                    .isOnboarded(user.getIsOnboarded() != null && user.getIsOnboarded())
+                    .build();
+
+        } catch (GeneralSecurityException | IOException e) {
+            log.error("❌ [Google Login] Error verifying token: {}", e.getMessage());
+            throw new AppException(ErrorCode.INVALID_CREDENTIALS);
         }
     }
 

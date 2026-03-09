@@ -25,4 +25,6 @@ public class UserResponse {
     String hobbies;
     String mainGoal;
     String preferredTone;
+    java.time.LocalDateTime createdAt;
+    java.time.LocalDateTime lastLoginDate;
 }

@@ -26,10 +26,13 @@ public class ChatRoomController {
     }
 
     @GetMapping("/{roomId}/messages")
-    public ApiResponse<List<ChatMessage>> getMessages(@PathVariable Long roomId) {
+    public ApiResponse<List<ChatMessage>> getMessages(
+            @PathVariable Long roomId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
         return ApiResponse.<List<ChatMessage>>builder()
                 .code(1000)
-                .result(chatRoomService.getMessages(roomId))
+                .result(chatRoomService.getMessages(roomId, page, size))
                 .build();
     }
 
