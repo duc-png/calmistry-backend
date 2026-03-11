@@ -39,6 +39,7 @@ public class WorkshopService {
     UserRepository userRepository;
     PayOS payOS;
 
+    @lombok.experimental.NonFinal
     @Value("${app.frontend-url:http://localhost:5173}")
     String frontendUrl;
 
