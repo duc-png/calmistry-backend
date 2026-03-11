@@ -278,6 +278,7 @@ public class AuthenticationService {
                         .username(email) // Use email as username
                         .email(email)
                         .fullName(fullName)
+                        .password(passwordEncoder.encode(UUID.randomUUID().toString())) // Google users don't use password login
                         .googleId(googleId)
                         .avatarUrl(pictureUrl)
                         .createdAt(LocalDateTime.now())
