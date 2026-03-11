@@ -36,6 +36,27 @@ public class WorkshopController {
                 .build();
     }
 
+    @PutMapping("/admin/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<WorkshopResponse> updateWorkshop(
+            @PathVariable Long id,
+            @RequestBody WorkshopRequest request) {
+        return ApiResponse.<WorkshopResponse>builder()
+                .code(1000)
+                .result(workshopService.updateWorkshop(id, request))
+                .build();
+    }
+
+    @DeleteMapping("/admin/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<String> deleteWorkshop(@PathVariable Long id) {
+        workshopService.deleteWorkshop(id);
+        return ApiResponse.<String>builder()
+                .code(1000)
+                .result("Workshop deleted successfully")
+                .build();
+    }
+
     @GetMapping("/upcoming")
     public ApiResponse<List<WorkshopResponse>> getUpcomingWorkshops() {
         return ApiResponse.<List<WorkshopResponse>>builder()

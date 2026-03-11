@@ -16,4 +16,6 @@ public interface WorkshopBookingRepository extends JpaRepository<WorkshopBooking
     Optional<WorkshopBooking> findByUserAndWorkshop(User user, Workshop workshop);
 
     boolean existsByUserAndWorkshop(User user, Workshop workshop);
+
+    void deleteByWorkshop(Workshop workshop);
 }

@@ -62,6 +62,46 @@ public class WorkshopService {
     }
 
     @Transactional
+    public WorkshopResponse updateWorkshop(Long id, WorkshopRequest request) {
+        log.info("✏️ Updating workshop {}: {}", id, request.getTitle());
+        Workshop workshop = workshopRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.WORKSHOP_NOT_FOUND));
+
+        workshop.setTitle(request.getTitle());
+        workshop.setDescription(request.getDescription());
+        workshop.setStartTime(request.getStartTime());
+        workshop.setEndTime(request.getEndTime());
+        workshop.setSpeakerName(request.getSpeakerName());
+        workshop.setSpeakerBio(request.getSpeakerBio());
+
+        // Don't lower max participants below current participants
+        if (request.getMaxParticipants() < workshop.getCurrentParticipants()) {
+            throw new IllegalArgumentException("Cannot set max participants lower than current participants");
+        }
+        workshop.setMaxParticipants(request.getMaxParticipants());
+
+        workshop.setImageUrl(request.getImageUrl());
+        workshop.setLocation(request.getLocation());
+
+        return mapToResponse(workshopRepository.save(workshop));
+    }
+
+    @Transactional
+    public void deleteWorkshop(Long id) {
+        log.info("🗑️ Deleting workshop {}", id);
+        Workshop workshop = workshopRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.WORKSHOP_NOT_FOUND));
+
+        // Delete all bookings associated with this workshop first to avoid FK
+        // constraint violations
+        workshopBookingRepository.deleteByWorkshop(workshop);
+
+        // Delete the workshop
+        workshopRepository.delete(workshop);
+        log.info("✅ Deleted workshop {}", id);
+    }
+
+    @Transactional
     public WorkshopResponse bookWorkshop(Long workshopId) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByUsername(username)
