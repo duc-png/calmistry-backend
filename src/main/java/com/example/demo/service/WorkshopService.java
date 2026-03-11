@@ -178,28 +178,41 @@ public class WorkshopService {
             // Calculate expired at (15 mins from now in Unix timestamp)
             long expiredAt = LocalDateTime.now().plusMinutes(15).toEpochSecond(ZoneOffset.ofHours(7));
 
+            // Sanitize title for PayOS (ASCII-safe, max 25 chars)
+            String itemName = workshop.getTitle()
+                    .replaceAll("[^a-zA-Z0-9\\s]", "")
+                    .trim();
+            if (itemName.length() > 25) itemName = itemName.substring(0, 25);
+            if (itemName.isEmpty()) itemName = "Workshop";
+
             ItemData item = ItemData.builder()
-                    .name("Workshop: " + (workshop.getTitle().length() > 20 ? workshop.getTitle().substring(0, 20) : workshop.getTitle()))
+                    .name(itemName)
                     .price(workshop.getPrice().intValue())
                     .quantity(1)
                     .build();
+
+            // Strip trailing slash from frontendUrl to avoid double-slash
+            String baseUrl = frontendUrl.endsWith("/") ? frontendUrl.substring(0, frontendUrl.length() - 1) : frontendUrl;
 
             PaymentData paymentData = PaymentData.builder()
                     .orderCode(orderCode)
                     .amount(workshop.getPrice().intValue())
                     .description("Thanh toan Workshop")
-                    .returnUrl(frontendUrl + "/workshops")
-                    .cancelUrl(frontendUrl + "/workshops")
+                    .returnUrl(baseUrl + "/workshops")
+                    .cancelUrl(baseUrl + "/workshops")
                     .item(item)
                     .expiredAt(expiredAt)
                     .build();
 
             try {
+                log.info("📦 Creating PayOS payment link for order {} amount {}", orderCode, workshop.getPrice().intValue());
                 CheckoutResponseData data = payOS.createPaymentLink(paymentData);
                 checkoutUrl = data.getCheckoutUrl();
+                log.info("✅ PayOS checkout URL: {}", checkoutUrl);
             } catch (Exception e) {
-                log.error("Failed to create PayOS payment link", e);
-                throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION); // Could be a specific PayOS error code
+                log.error("❌ Failed to create PayOS payment link. OrderCode: {}, Amount: {}, Error: {}", 
+                    orderCode, workshop.getPrice().intValue(), e.getMessage(), e);
+                throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
             }
         } else {
             // Update current participants only if firmly confirmed (free)
