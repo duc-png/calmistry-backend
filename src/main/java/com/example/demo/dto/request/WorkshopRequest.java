@@ -20,4 +20,5 @@ public class WorkshopRequest {
     Integer maxParticipants;
     String imageUrl;
     String location;
+    Double price;
 }

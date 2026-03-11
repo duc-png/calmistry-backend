@@ -115,6 +115,13 @@
 			<groupId>org.springframework.ai</groupId>
 			<artifactId>spring-ai-openai-spring-boot-starter</artifactId>
 		</dependency>
+
+		<!-- PayOS Java SDK for Payment Integration -->
+		<dependency>
+			<groupId>vn.payos</groupId>
+			<artifactId>payos-java</artifactId>
+			<version>1.0.3</version>
+		</dependency>
 	</dependencies>
 
 	<dependencyManagement>

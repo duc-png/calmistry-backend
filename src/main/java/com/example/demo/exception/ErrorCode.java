@@ -26,7 +26,9 @@ public enum ErrorCode {
     FUIEDS_SESSION_ALREADY_EXISTS(1013, "Bạn đã hoàn thành đánh giá tâm trạng hôm nay rồi!", HttpStatus.BAD_REQUEST),
     WORKSHOP_NOT_FOUND(1014, "Không tìm thấy Workshop!", HttpStatus.NOT_FOUND),
     WORKSHOP_FULL(1015, "Workshop đã hết chỗ rồi bạn ơi!", HttpStatus.BAD_REQUEST),
-    WORKSHOP_ALREADY_BOOKED(1016, "Bạn đã đặt chỗ cho Workshop này rồi!", HttpStatus.BAD_REQUEST);
+    WORKSHOP_ALREADY_BOOKED(1016, "Bạn đã đặt chỗ cho Workshop này rồi!", HttpStatus.BAD_REQUEST),
+    WORKSHOP_NOT_BOOKED(1017, "Bạn chưa đăng ký Workshop này!", HttpStatus.BAD_REQUEST),
+    WORKSHOP_CANCEL_EXPIRED(1018, "Không thể hủy đăng ký sau 1 giờ!", HttpStatus.BAD_REQUEST);
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {
         this.code = code;

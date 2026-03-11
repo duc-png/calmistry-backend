@@ -17,5 +17,9 @@ public interface WorkshopBookingRepository extends JpaRepository<WorkshopBooking
 
     boolean existsByUserAndWorkshop(User user, Workshop workshop);
 
+    Optional<WorkshopBooking> findByOrderCode(Long orderCode);
+    
+    List<WorkshopBooking> findByStatusAndBookedAtBefore(WorkshopBooking.BookingStatus status, java.time.LocalDateTime cutoffTime);
+
     void deleteByWorkshop(Workshop workshop);
 }

@@ -23,4 +23,7 @@ public class WorkshopResponse {
     String status;
     String imageUrl;
     String location;
+    Boolean isBooked;
+    Double price;
+    String checkoutUrl;
 }

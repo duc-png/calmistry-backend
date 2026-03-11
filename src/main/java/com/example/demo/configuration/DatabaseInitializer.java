@@ -20,11 +20,20 @@ public class DatabaseInitializer {
     private final RoleRepository roleRepository;
     private final com.example.demo.repository.UserRepository userRepository;
     private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     @Bean
     CommandLineRunner initDatabase() {
         return args -> {
             log.info("🗄️ Initializing database with default roles and users...");
+
+            // Fix workshop_bookings status column if needed
+            try {
+                jdbcTemplate.execute("ALTER TABLE workshop_bookings MODIFY COLUMN status VARCHAR(20) NOT NULL DEFAULT 'CONFIRMED'");
+                log.info("Schema updated: workshop_bookings.status column is now VARCHAR(20).");
+            } catch (Exception e) {
+                log.warn("Could not alter workshop_bookings.status column (may already be correct): {}", e.getMessage());
+            }
 
             // Create ADMIN role if not exists
             Role adminRole = roleRepository.findByName("ADMIN").orElseGet(() -> {

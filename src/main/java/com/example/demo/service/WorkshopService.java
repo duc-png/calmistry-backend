@@ -14,11 +14,18 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import vn.payos.PayOS;
+import vn.payos.type.CheckoutResponseData;
+import vn.payos.type.ItemData;
+import vn.payos.type.PaymentData;
+
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,6 +37,10 @@ public class WorkshopService {
     WorkshopRepository workshopRepository;
     WorkshopBookingRepository workshopBookingRepository;
     UserRepository userRepository;
+    PayOS payOS;
+
+    @Value("${app.frontend-url:http://localhost:5173}")
+    String frontendUrl;
 
     @Transactional
     public WorkshopResponse createWorkshop(WorkshopRequest request) {
@@ -44,6 +55,7 @@ public class WorkshopService {
                 .maxParticipants(request.getMaxParticipants())
                 .imageUrl(request.getImageUrl())
                 .location(request.getLocation())
+                .price(request.getPrice())
                 .build();
 
         return mapToResponse(workshopRepository.save(workshop));
@@ -56,8 +68,31 @@ public class WorkshopService {
     }
 
     public List<WorkshopResponse> getUpcomingWorkshops() {
+        String username = null;
+        try {
+            if (SecurityContextHolder.getContext().getAuthentication() != null) {
+                username = SecurityContextHolder.getContext().getAuthentication().getName();
+            }
+        } catch (Exception e) {
+            // ignore
+        }
+
+        User user = null;
+        if (username != null && !username.equals("anonymousUser")) {
+            user = userRepository.findByUsername(username).orElse(null);
+        }
+        final User finalUser = user;
+
         return workshopRepository.findByStatus(Workshop.WorkshopStatus.UPCOMING).stream()
-                .map(this::mapToResponse)
+                .map(workshop -> {
+                    WorkshopResponse response = mapToResponse(workshop);
+                    if (finalUser != null) {
+                        response.setIsBooked(workshopBookingRepository.existsByUserAndWorkshop(finalUser, workshop));
+                    } else {
+                        response.setIsBooked(false);
+                    }
+                    return response;
+                })
                 .collect(Collectors.toList());
     }
 
@@ -82,6 +117,11 @@ public class WorkshopService {
 
         workshop.setImageUrl(request.getImageUrl());
         workshop.setLocation(request.getLocation());
+        // For updates, price should probably only be editable if there are no bookings,
+        // but for now we let admin change it.
+        if (request.getPrice() != null) {
+            workshop.setPrice(request.getPrice());
+        }
 
         return mapToResponse(workshopRepository.save(workshop));
     }
@@ -118,24 +158,89 @@ public class WorkshopService {
             throw new AppException(ErrorCode.WORKSHOP_FULL);
         }
 
+        boolean isPaid = workshop.getPrice() != null && workshop.getPrice() > 0;
+
         WorkshopBooking booking = WorkshopBooking.builder()
                 .user(user)
                 .workshop(workshop)
                 .bookedAt(LocalDateTime.now())
-                .status(WorkshopBooking.BookingStatus.CONFIRMED)
+                .status(isPaid ? WorkshopBooking.BookingStatus.PENDING : WorkshopBooking.BookingStatus.CONFIRMED)
                 .build();
+
+        String checkoutUrl = null;
+
+        if (isPaid) {
+            // Generate order code (must be numeric and unique per PayOS rules, max 50 chars)
+            long orderCode = System.currentTimeMillis() % 10000000000L; // 10 digits
+            booking.setOrderCode(orderCode);
+            
+            // Calculate expired at (15 mins from now in Unix timestamp)
+            long expiredAt = LocalDateTime.now().plusMinutes(15).toEpochSecond(ZoneOffset.ofHours(7));
+
+            ItemData item = ItemData.builder()
+                    .name("Workshop: " + (workshop.getTitle().length() > 20 ? workshop.getTitle().substring(0, 20) : workshop.getTitle()))
+                    .price(workshop.getPrice().intValue())
+                    .quantity(1)
+                    .build();
+
+            PaymentData paymentData = PaymentData.builder()
+                    .orderCode(orderCode)
+                    .amount(workshop.getPrice().intValue())
+                    .description("Thanh toan Workshop")
+                    .returnUrl(frontendUrl + "/workshops")
+                    .cancelUrl(frontendUrl + "/workshops")
+                    .item(item)
+                    .expiredAt(expiredAt)
+                    .build();
+
+            try {
+                CheckoutResponseData data = payOS.createPaymentLink(paymentData);
+                checkoutUrl = data.getCheckoutUrl();
+            } catch (Exception e) {
+                log.error("Failed to create PayOS payment link", e);
+                throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION); // Could be a specific PayOS error code
+            }
+        } else {
+            // Update current participants only if firmly confirmed (free)
+            workshop.setCurrentParticipants(workshop.getCurrentParticipants() + 1);
+            if (workshop.getCurrentParticipants().equals(workshop.getMaxParticipants())) {
+                // Optional: Auto change status to full/ongoing if needed
+            }
+            workshopRepository.save(workshop);
+        }
 
         workshopBookingRepository.save(booking);
 
-        // Update current participants
-        workshop.setCurrentParticipants(workshop.getCurrentParticipants() + 1);
-        if (workshop.getCurrentParticipants().equals(workshop.getMaxParticipants())) {
-            // Optional: Auto change status to full/ongoing if needed
-        }
-        workshopRepository.save(workshop);
+        log.info("✅ User {} booked workshop {}. Status: {}", username, workshop.getTitle(), booking.getStatus());
+        WorkshopResponse response = mapToResponse(workshop);
+        response.setCheckoutUrl(checkoutUrl);
+        return response;
+    }
 
-        log.info("✅ User {} booked workshop {}", username, workshop.getTitle());
-        return mapToResponse(workshop);
+    @Transactional
+    public void cancelBooking(Long workshopId) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        Workshop workshop = workshopRepository.findById(workshopId)
+                .orElseThrow(() -> new AppException(ErrorCode.WORKSHOP_NOT_FOUND));
+
+        WorkshopBooking booking = workshopBookingRepository.findByUserAndWorkshop(user, workshop)
+                .orElseThrow(() -> new AppException(ErrorCode.WORKSHOP_NOT_BOOKED));
+
+        if (java.time.Duration.between(booking.getBookedAt(), LocalDateTime.now()).toMinutes() > 60) {
+            throw new AppException(ErrorCode.WORKSHOP_CANCEL_EXPIRED);
+        }
+
+        workshopBookingRepository.delete(booking);
+
+        if (booking.getStatus() == WorkshopBooking.BookingStatus.CONFIRMED) {
+            workshop.setCurrentParticipants(workshop.getCurrentParticipants() - 1);
+            workshopRepository.save(workshop);
+        }
+
+        log.info("✅ User {} cancelled booking for workshop {}", username, workshop.getTitle());
     }
 
     private WorkshopResponse mapToResponse(Workshop workshop) {
@@ -152,6 +257,7 @@ public class WorkshopService {
                 .status(workshop.getStatus().name())
                 .imageUrl(workshop.getImageUrl())
                 .location(workshop.getLocation())
+                .price(workshop.getPrice())
                 .build();
     }
 }

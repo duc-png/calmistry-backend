@@ -28,8 +28,11 @@ public class WorkshopBooking {
     @Column(name = "booked_at")
     private LocalDateTime bookedAt;
 
+    @Column(name = "order_code")
+    private Long orderCode;
+
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "VARCHAR(20)")
     @Builder.Default
     private BookingStatus status = BookingStatus.CONFIRMED;
 
@@ -39,6 +42,6 @@ public class WorkshopBooking {
     }
 
     public enum BookingStatus {
-        CONFIRMED, CANCELLED
+        PENDING, CONFIRMED, CANCELLED
     }
 }

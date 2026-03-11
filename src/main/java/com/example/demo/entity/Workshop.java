@@ -55,6 +55,10 @@ public class Workshop {
     @Column(name = "location") // Can be "Online" or a physical address
     private String location;
 
+    @Column(name = "price")
+    @Builder.Default
+    private Double price = 0.0;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
