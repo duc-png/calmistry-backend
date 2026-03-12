@@ -24,6 +24,7 @@ import vn.payos.type.CheckoutResponseData;
 import vn.payos.type.ItemData;
 import vn.payos.type.PaymentData;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -175,8 +176,8 @@ public class WorkshopService {
             long orderCode = System.currentTimeMillis() % 10000000000L; // 10 digits
             booking.setOrderCode(orderCode);
             
-            // Calculate expired at (15 mins from now in Unix timestamp)
-            long expiredAt = LocalDateTime.now().plusMinutes(15).toEpochSecond(ZoneOffset.ofHours(7));
+            // Calculate expired at (15 mins from now in Unix timestamp) - Robust to server timezone
+            long expiredAt = Instant.now().getEpochSecond() + (15 * 60);
 
             // Sanitize title for PayOS (ASCII-safe, max 25 chars)
             String itemName = workshop.getTitle()
