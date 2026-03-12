@@ -13,8 +13,10 @@ import java.time.LocalDate;
 public class UserResponse {
     Long id;
     String username;
+    String avatarUrl;
     String fullName;
     String email;
+    String phoneNumber;
     Integer fuedScore; // Maps to totalPoints in UserStats
     Integer currentStreak;
     LocalDate lastActivityDate;

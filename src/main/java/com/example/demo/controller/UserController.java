@@ -46,4 +46,12 @@ public class UserController {
                 .result(userService.completeOnboarding(request))
                 .build();
     }
+
+    @PutMapping("/update-profile")
+    public ApiResponse<UserResponse> updateMyInfo(
+            @RequestBody com.example.demo.dto.request.UserUpdateRequest request) {
+        return ApiResponse.<UserResponse>builder()
+                .result(userService.updateMyInfo(request))
+                .build();
+    }
 }

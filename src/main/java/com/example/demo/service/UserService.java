@@ -78,6 +78,21 @@ public class UserService {
     }
 
     @org.springframework.transaction.annotation.Transactional
+    public UserResponse updateMyInfo(com.example.demo.dto.request.UserUpdateRequest request) {
+        var context = SecurityContextHolder.getContext();
+        String name = context.getAuthentication().getName();
+
+        User user = userRepository.findByUsername(name)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        if (request.getFullName() != null) user.setFullName(request.getFullName());
+        if (request.getPhoneNumber() != null) user.setPhoneNumber(request.getPhoneNumber());
+        if (request.getAvatarUrl() != null) user.setAvatarUrl(request.getAvatarUrl());
+
+        return mapToResponse(userRepository.save(user));
+    }
+
+    @org.springframework.transaction.annotation.Transactional
     public UserResponse completeOnboarding(UserOnboardingRequest request) {
         var context = SecurityContextHolder.getContext();
         String name = context.getAuthentication().getName();
@@ -111,8 +126,10 @@ public class UserService {
         return UserResponse.builder()
                 .id(user.getId())
                 .username(user.getUsername())
+                .avatarUrl(user.getAvatarUrl())
                 .fullName(user.getFullName())
                 .email(user.getEmail())
+                .phoneNumber(user.getPhoneNumber())
                 .fuedScore(points)
                 .currentStreak(streak)
                 .lastActivityDate(lastActivity)
