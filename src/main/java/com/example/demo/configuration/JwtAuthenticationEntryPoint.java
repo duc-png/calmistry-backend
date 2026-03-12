@@ -25,7 +25,7 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
         ApiResponse<?> apiResponse = ApiResponse.builder()
                 .code(errorCode.getCode())
-                .message(errorCode.getMessage())
+                .message(errorCode.getMessage() + (authException != null ? ": " + authException.getMessage() : ""))
                 .build();
 
         ObjectMapper objectMapper = new ObjectMapper();

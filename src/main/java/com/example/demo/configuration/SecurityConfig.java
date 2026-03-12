@@ -27,7 +27,6 @@ public class SecurityConfig {
             "/auth/google", // Google login endpoint
             "/auth/outbound/authentication", "/ws/**", "/journals/**", // TEMP: Testing without auth
             "/files/**", // Public File Access
-            "/workshops/**", // TEMP: Debugging auth
             // Public Blog Access
             "/blogs/published", "/blogs/search", "/blogs/{id}",
             // Swagger UI & API Docs
