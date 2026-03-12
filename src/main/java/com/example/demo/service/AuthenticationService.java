@@ -131,6 +131,7 @@ public class AuthenticationService {
                 .build();
     }
 
+    @Transactional
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
         log.info("🔐 [Login] Attempting authentication for email: {}", request.getEmail());
 

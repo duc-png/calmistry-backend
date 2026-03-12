@@ -66,7 +66,7 @@ public class WorkshopController {
     }
 
     @PostMapping("/{id}/book")
-    @PreAuthorize("hasAnyAuthority('ROLE_USER', 'ROLE_ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ApiResponse<WorkshopResponse> bookWorkshop(@PathVariable Long id) {
         return ApiResponse.<WorkshopResponse>builder()
                 .code(1000)
@@ -75,7 +75,7 @@ public class WorkshopController {
     }
 
     @DeleteMapping("/{id}/cancel")
-    @PreAuthorize("hasAnyAuthority('ROLE_USER', 'ROLE_ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ApiResponse<String> cancelBooking(@PathVariable Long id) {
         workshopService.cancelBooking(id);
         return ApiResponse.<String>builder()
