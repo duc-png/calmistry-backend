@@ -11,5 +11,6 @@ import lombok.experimental.FieldDefaults;
 public class UserUpdateRequest {
     String fullName;
     String phoneNumber;
+    String address;
     String avatarUrl; // Adding this in case user wants to change avatar
 }

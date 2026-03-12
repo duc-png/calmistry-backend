@@ -87,6 +87,7 @@ public class UserService {
 
         if (request.getFullName() != null) user.setFullName(request.getFullName());
         if (request.getPhoneNumber() != null) user.setPhoneNumber(request.getPhoneNumber());
+        if (request.getAddress() != null) user.setAddress(request.getAddress());
         if (request.getAvatarUrl() != null) user.setAvatarUrl(request.getAvatarUrl());
 
         return mapToResponse(userRepository.save(user));
@@ -130,6 +131,7 @@ public class UserService {
                 .fullName(user.getFullName())
                 .email(user.getEmail())
                 .phoneNumber(user.getPhoneNumber())
+                .address(user.getAddress())
                 .fuedScore(points)
                 .currentStreak(streak)
                 .lastActivityDate(lastActivity)

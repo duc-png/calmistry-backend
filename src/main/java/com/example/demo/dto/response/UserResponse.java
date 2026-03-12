@@ -17,6 +17,7 @@ public class UserResponse {
     String fullName;
     String email;
     String phoneNumber;
+    String address;
     Integer fuedScore; // Maps to totalPoints in UserStats
     Integer currentStreak;
     LocalDate lastActivityDate;

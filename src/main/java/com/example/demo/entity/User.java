@@ -41,6 +41,9 @@ public class User {
     @Column(name = "phone_number", length = 20)
     private String phoneNumber;
 
+    @Column(name = "address", length = 255)
+    private String address;
+
     @Column(name = "fcm_token", length = 255)
     private String fcmToken;
 
