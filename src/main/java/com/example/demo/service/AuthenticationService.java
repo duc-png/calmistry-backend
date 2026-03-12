@@ -1,5 +1,7 @@
 package com.example.demo.service;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import com.example.demo.dto.request.AuthenticationRequest;
 import com.example.demo.dto.request.GoogleLoginRequest;
 import com.example.demo.dto.request.IntrospectRequest;

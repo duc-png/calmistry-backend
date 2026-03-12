@@ -212,11 +212,7 @@ public class WorkshopService {
             } catch (Exception e) {
                 log.error("❌ Failed to create PayOS payment link. OrderCode: {}, Amount: {}, Error: {}", 
                     orderCode, workshop.getPrice().intValue(), e.getMessage(), e);
-                ApiResponse<?> apiError = ApiResponse.builder()
-                        .code(ErrorCode.UNCATEGORIZED_EXCEPTION.getCode())
-                        .message("Lỗi tạo link thanh toán PayOS: " + e.getMessage())
-                        .build();
-                throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+                throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Lỗi tạo link thanh toán PayOS: " + e.getMessage());
             }
         } else {
             // Update current participants only if firmly confirmed (free)
