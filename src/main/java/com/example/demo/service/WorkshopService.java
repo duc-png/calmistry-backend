@@ -146,28 +146,41 @@ public class WorkshopService {
     @Transactional
     public WorkshopResponse bookWorkshop(Long workshopId) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        log.info("🔍 [Booking] User {} attempting to book workshop {}", username, workshopId);
+
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
         Workshop workshop = workshopRepository.findById(workshopId)
                 .orElseThrow(() -> new AppException(ErrorCode.WORKSHOP_NOT_FOUND));
 
+        // Basic validation with null safety
+        int currentParticipants = workshop.getCurrentParticipants() != null ? workshop.getCurrentParticipants() : 0;
+        int maxParticipants = workshop.getMaxParticipants() != null ? workshop.getMaxParticipants() : 999;
+        log.info("📊 [Booking] Workshop: {}, Participants: {} / {}", workshopId, currentParticipants, maxParticipants);
+
         if (workshopBookingRepository.existsByUserAndWorkshop(user, workshop)) {
+            log.warn("⚠️ [Booking] User {} already booked workshop {}", username, workshopId);
             throw new AppException(ErrorCode.WORKSHOP_ALREADY_BOOKED);
         }
 
-        if (workshop.getCurrentParticipants() >= workshop.getMaxParticipants()) {
+        if (currentParticipants >= maxParticipants) {
+            log.warn("⚠️ [Booking] Workshop {} is full ({} / {})", workshopId, currentParticipants, maxParticipants);
             throw new AppException(ErrorCode.WORKSHOP_FULL);
         }
 
         boolean isPaid = workshop.getPrice() != null && workshop.getPrice() > 0;
+        log.info("💳 [Booking] Workshop {} isPaid: {}, price: {}", workshopId, isPaid, workshop.getPrice());
+
+        WorkshopBooking.BookingStatus initialStatus = isPaid ? WorkshopBooking.BookingStatus.PENDING : WorkshopBooking.BookingStatus.CONFIRMED;
 
         WorkshopBooking booking = WorkshopBooking.builder()
                 .user(user)
                 .workshop(workshop)
                 .bookedAt(LocalDateTime.now())
-                .status(isPaid ? WorkshopBooking.BookingStatus.PENDING : WorkshopBooking.BookingStatus.CONFIRMED)
+                .status(initialStatus)
                 .build();
+        log.info("📝 [Booking] Booking entity prepared for user {}", username);
 
         String checkoutUrl = null;
 
@@ -175,6 +188,7 @@ public class WorkshopService {
             // Generate order code (must be numeric and unique per PayOS rules, max 50 chars)
             long orderCode = System.currentTimeMillis() % 10000000000L; // 10 digits
             booking.setOrderCode(orderCode);
+            log.info("🔢 [Booking] Generated OrderCode: {}", orderCode);
             
             // Calculate expired at (15 mins from now in Unix timestamp) - Robust to server timezone
             long expiredAt = Instant.now().getEpochSecond() + (15 * 60);
@@ -206,21 +220,19 @@ public class WorkshopService {
                     .build();
 
             try {
-                log.info("📦 Creating PayOS payment link for order {} amount {}", orderCode, workshop.getPrice().intValue());
+                log.info("📦 Creating PayOS payment link. OrderCode: {}, Amount: {}", orderCode, workshop.getPrice().intValue());
                 CheckoutResponseData data = payOS.createPaymentLink(paymentData);
                 checkoutUrl = data.getCheckoutUrl();
-                log.info("✅ PayOS checkout URL: {}", checkoutUrl);
             } catch (Exception e) {
-                log.error("❌ Failed to create PayOS payment link. OrderCode: {}, Amount: {}, Error: {}", 
-                    orderCode, workshop.getPrice().intValue(), e.getMessage(), e);
-                throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Lỗi tạo link thanh toán PayOS: " + e.getMessage());
+                log.error("❌ PayOS Error: {}", e.getMessage(), e);
+                // Return a clear error to the user
+                throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, 
+                    "Không thể tạo link thanh toán PayOS. Chi tiết: " + e.getMessage());
             }
         } else {
             // Update current participants only if firmly confirmed (free)
-            workshop.setCurrentParticipants(workshop.getCurrentParticipants() + 1);
-            if (workshop.getCurrentParticipants().equals(workshop.getMaxParticipants())) {
-                // Optional: Auto change status to full/ongoing if needed
-            }
+            int current = workshop.getCurrentParticipants() != null ? workshop.getCurrentParticipants() : 0;
+            workshop.setCurrentParticipants(current + 1);
             workshopRepository.save(workshop);
         }
 

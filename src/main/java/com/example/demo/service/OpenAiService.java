@@ -42,7 +42,7 @@ public class OpenAiService {
      */
     public String generateResponse(String userMessage) {
         try {
-            String url = "https://api.openai.com/v1/chat/completions";
+            String url = "https://yunwu.ai/v1/chat/completions";
 
             // Headers
             HttpHeaders headers = new HttpHeaders();
