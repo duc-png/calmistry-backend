@@ -32,7 +32,7 @@ spring:
   ai:
     openai:
       api-key: ${SPRING_AI_KEY:sk-DYCPzNCbJdk43lOWbK96YLDoB4JUgTGIRKv0XGcdwsxLiDPs}
-      base-url: ${SPRING_AI_BASE_URL:https://yunwu.ai/v1}
+      base-url: ${SPRING_AI_BASE_URL:https://yunwu.ai}
       chat:
         options:
           model: ${SPRING_AI_MODEL:gpt-4o}
