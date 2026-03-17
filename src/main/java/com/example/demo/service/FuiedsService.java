@@ -3,6 +3,7 @@ package com.example.demo.service;
 import com.example.demo.dto.request.SubmitFuiedsRequest;
 import com.example.demo.dto.response.FuiedsScoreResponse;
 import com.example.demo.entity.FuiedsResponse;
+import com.example.demo.entity.GamificationEventType;
 import com.example.demo.entity.User;
 import com.example.demo.repository.FuiedsResponseRepository;
 import com.example.demo.repository.UserRepository;
@@ -25,6 +26,7 @@ public class FuiedsService {
     private final FuiedsResponseRepository fuiedsResponseRepository;
     private final UserRepository userRepository;
     private final com.example.demo.repository.UserStatsRepository userStatsRepository;
+    private final GamificationService gamificationService;
 
     @PostConstruct
     public void init() {
@@ -97,6 +99,7 @@ public class FuiedsService {
 
         response = fuiedsResponseRepository.save(response);
         updateStreak(user, today);
+        gamificationService.awardDailySpin(user, GamificationEventType.FUIEDS_SCORE);
 
         log.info("FUIEDS response submitted for user {}: score={}, smoothed={}, goodEnough={}",
                 user.getUsername(), rawScore, smoothedScore, isGoodEnough);

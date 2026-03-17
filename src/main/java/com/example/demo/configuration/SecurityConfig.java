@@ -79,12 +79,13 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        // Explicitly allow production and local origins
-        config.setAllowedOrigins(Arrays.asList(
+        // Allow production + any localhost/loopback ports for dev (5173/4173/etc.)
+        config.setAllowedOriginPatterns(Arrays.asList(
                 "https://www.calmistry.blog",
                 "https://calmistry.blog",
-                "http://localhost:5173",
-                "http://localhost:3000"
+                "http://localhost:*",
+                "http://127.0.0.1:*",
+                "http://[::1]:*"
         ));
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");

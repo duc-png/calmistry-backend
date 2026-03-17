@@ -25,6 +25,10 @@ public class WorkshopBooking {
     @JoinColumn(name = "workshop_id", nullable = false)
     private Workshop workshop;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_voucher_id")
+    private UserVoucher userVoucher;
+
     @Column(name = "booked_at")
     private LocalDateTime bookedAt;
 

@@ -30,4 +30,7 @@ public class UserStats {
 
     @Column(name = "last_activity_date")
     private LocalDate lastActivityDate;
+
+    @Column(name = "spin_balance")
+    private Integer spinBalance = 0;
 }

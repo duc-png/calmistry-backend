@@ -2,6 +2,7 @@ package com.example.demo.service;
 
 import com.example.demo.dto.request.StoryCreateRequest;
 import com.example.demo.dto.response.StoryResponse;
+import com.example.demo.entity.GamificationEventType;
 import com.example.demo.entity.Story;
 import com.example.demo.entity.StoryInteraction;
 import com.example.demo.entity.User;
@@ -35,6 +36,7 @@ public class StoryService {
     StoryInteractionRepository storyInteractionRepository;
     UserRepository userRepository;
     UserStatsRepository userStatsRepository;
+    GamificationService gamificationService;
 
     @Transactional
     public StoryResponse createStory(StoryCreateRequest request) {
@@ -46,13 +48,22 @@ public class StoryService {
                 .user(user)
                 .content(request.getContent())
                 .isAnonymous(request.getIsAnonymous() != null && request.getIsAnonymous())
-                .likeCount(0)
+                .likeCount(1)
                 .build();
 
         story = storyRepository.save(story);
 
+        // Give the author an initial like on their own story (as requested)
+        StoryInteraction initialLike = new StoryInteraction();
+        initialLike.setStory(story);
+        initialLike.setUser(user);
+        initialLike.setType(StoryInteraction.InteractionType.LIKE);
+        storyInteractionRepository.save(initialLike);
+
         // Award points (+10 FUED)
         updateUserPoints(user, 10);
+
+        gamificationService.awardDailySpin(user, GamificationEventType.STORY_SHARE);
 
         return mapToResponse(story, user);
     }
@@ -90,7 +101,9 @@ public class StoryService {
             story.setLikeCount(Math.max(0, story.getLikeCount() - 1));
 
             // Remove points from author (-2)
-            updateUserPoints(story.getUser(), -2);
+            if (!story.getUser().getId().equals(user.getId())) {
+                updateUserPoints(story.getUser(), -2);
+            }
         } else {
             // Like
             StoryInteraction interaction = new StoryInteraction();
@@ -101,7 +114,9 @@ public class StoryService {
             story.setLikeCount(story.getLikeCount() + 1);
 
             // Award points to author (+2)
-            updateUserPoints(story.getUser(), 2);
+            if (!story.getUser().getId().equals(user.getId())) {
+                updateUserPoints(story.getUser(), 2);
+            }
         }
 
         storyRepository.save(story);

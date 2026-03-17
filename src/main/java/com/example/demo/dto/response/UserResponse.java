@@ -21,6 +21,7 @@ public class UserResponse {
     Integer fuedScore; // Maps to totalPoints in UserStats
     Integer currentStreak;
     LocalDate lastActivityDate;
+    Integer spinBalance;
     java.util.Set<String> roles;
     Boolean isOnboarded;
     String gender;

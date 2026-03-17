@@ -9,6 +9,7 @@ import com.example.demo.dto.request.UserRegistrationRequest;
 import com.example.demo.dto.response.AuthenticationResponse;
 import com.example.demo.dto.response.IntrospectResponse;
 import com.example.demo.dto.response.UserRegistrationResponse;
+import com.example.demo.entity.GamificationEventType;
 import com.example.demo.entity.Role;
 import com.example.demo.entity.User;
 import com.example.demo.exception.AppException;
@@ -56,6 +57,7 @@ public class AuthenticationService {
     final RoleRepository roleRepository;
     final InvalidatedTokenRepository invalidatedTokenRepository;
     final PasswordEncoder passwordEncoder;
+    final GamificationService gamificationService;
 
     @NonFinal
     @Value("${jwt.signerKey}")
@@ -155,6 +157,7 @@ public class AuthenticationService {
 
         log.info("🎫 [Login] Generating token for user: {}", user.getUsername());
         var token = generateToken(user);
+        awardDailyLoginSpinIfEligible(user);
         log.info("✅ [Login] Authentication successful for: {}", user.getUsername());
 
         return AuthenticationResponse.builder()
@@ -162,6 +165,14 @@ public class AuthenticationService {
                 .authenticated(true)
                 .isOnboarded(user.getIsOnboarded() != null && user.getIsOnboarded())
                 .build();
+    }
+
+    private void awardDailyLoginSpinIfEligible(User user) {
+        boolean awarded = gamificationService.awardDailySpin(user, GamificationEventType.LOGIN_DAILY);
+        if (awarded) {
+            user.setLastLoginDate(LocalDateTime.now());
+            userRepository.save(user);
+        }
     }
 
     private SignedJWT verifyToken(String token, boolean isRefresh) throws JOSEException, ParseException {
@@ -310,6 +321,7 @@ public class AuthenticationService {
 
             // Generate JWT token
             var token = generateToken(user);
+            awardDailyLoginSpinIfEligible(user);
             log.info("🎫 [Google Login] JWT generated for: {}", user.getUsername());
 
             return AuthenticationResponse.builder()

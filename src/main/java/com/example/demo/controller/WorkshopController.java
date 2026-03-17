@@ -69,10 +69,12 @@ public class WorkshopController {
 
     @PostMapping("/{id}/book")
     @PreAuthorize("isAuthenticated()")
-    public ApiResponse<WorkshopResponse> bookWorkshop(@PathVariable Long id) {
+    public ApiResponse<WorkshopResponse> bookWorkshop(
+            @PathVariable Long id,
+            @RequestParam(required = false) String voucherCode) {
         return ApiResponse.<WorkshopResponse>builder()
                 .code(1000)
-                .result(workshopService.bookWorkshop(id))
+                .result(workshopService.bookWorkshop(id, voucherCode))
                 .build();
     }
 

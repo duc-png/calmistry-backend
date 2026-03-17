@@ -38,6 +38,7 @@ public class WorkshopService {
     WorkshopRepository workshopRepository;
     WorkshopBookingRepository workshopBookingRepository;
     UserRepository userRepository;
+    com.example.demo.repository.UserVoucherRepository userVoucherRepository;
     PayOS payOS;
 
     @lombok.experimental.NonFinal
@@ -144,9 +145,9 @@ public class WorkshopService {
     }
 
     @Transactional
-    public WorkshopResponse bookWorkshop(Long workshopId) {
+    public WorkshopResponse bookWorkshop(Long workshopId, String voucherCode) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        log.info("🔍 [Booking] User {} attempting to book workshop {}", username, workshopId);
+        log.info("🔍 [Booking] User {} attempting to book workshop {} with voucher {}", username, workshopId, voucherCode);
 
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
@@ -154,29 +155,46 @@ public class WorkshopService {
         Workshop workshop = workshopRepository.findById(workshopId)
                 .orElseThrow(() -> new AppException(ErrorCode.WORKSHOP_NOT_FOUND));
 
-        // Basic validation with null safety
         int currentParticipants = workshop.getCurrentParticipants() != null ? workshop.getCurrentParticipants() : 0;
         int maxParticipants = workshop.getMaxParticipants() != null ? workshop.getMaxParticipants() : 999;
-        log.info("📊 [Booking] Workshop: {}, Participants: {} / {}", workshopId, currentParticipants, maxParticipants);
 
         if (workshopBookingRepository.existsByUserAndWorkshop(user, workshop)) {
-            log.warn("⚠️ [Booking] User {} already booked workshop {}", username, workshopId);
             throw new AppException(ErrorCode.WORKSHOP_ALREADY_BOOKED);
         }
 
         if (currentParticipants >= maxParticipants) {
-            log.warn("⚠️ [Booking] Workshop {} is full ({} / {})", workshopId, currentParticipants, maxParticipants);
             throw new AppException(ErrorCode.WORKSHOP_FULL);
         }
 
-        boolean isPaid = workshop.getPrice() != null && workshop.getPrice() > 0;
-        log.info("💳 [Booking] Workshop {} isPaid: {}, price: {}", workshopId, isPaid, workshop.getPrice());
+        double finalPrice = workshop.getPrice() != null ? workshop.getPrice() : 0.0;
+        com.example.demo.entity.UserVoucher appliedVoucher = null;
 
+        if (voucherCode != null && !voucherCode.trim().isEmpty()) {
+            appliedVoucher = userVoucherRepository.findByCode(voucherCode)
+                    .orElseThrow(() -> new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Voucher không tồn tại"));
+            if (!appliedVoucher.getUser().getId().equals(user.getId())) {
+                throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Voucher không thuộc về bạn");
+            }
+            if (appliedVoucher.getStatus() != com.example.demo.entity.UserVoucher.VoucherStatus.UNUSED) {
+                throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Voucher đã được sử dụng");
+            }
+
+            if (appliedVoucher.getVoucher().getDiscountType() == com.example.demo.entity.Voucher.DiscountType.PERCENTAGE) {
+                finalPrice = finalPrice * (1 - appliedVoucher.getVoucher().getDiscountValue() / 100.0);
+            } else {
+                finalPrice = Math.max(0, finalPrice - appliedVoucher.getVoucher().getDiscountValue());
+            }
+            appliedVoucher.setStatus(com.example.demo.entity.UserVoucher.VoucherStatus.USED);
+            userVoucherRepository.save(appliedVoucher);
+        }
+
+        boolean isPaid = finalPrice > 0;
         WorkshopBooking.BookingStatus initialStatus = isPaid ? WorkshopBooking.BookingStatus.PENDING : WorkshopBooking.BookingStatus.CONFIRMED;
 
         WorkshopBooking booking = WorkshopBooking.builder()
                 .user(user)
                 .workshop(workshop)
+                .userVoucher(appliedVoucher)
                 .bookedAt(LocalDateTime.now())
                 .status(initialStatus)
                 .build();
@@ -202,7 +220,7 @@ public class WorkshopService {
 
             ItemData item = ItemData.builder()
                     .name(itemName)
-                    .price(workshop.getPrice().intValue())
+                    .price((int) finalPrice)
                     .quantity(1)
                     .build();
 
@@ -211,7 +229,7 @@ public class WorkshopService {
 
             PaymentData paymentData = PaymentData.builder()
                     .orderCode(orderCode)
-                    .amount(workshop.getPrice().intValue())
+                    .amount((int) finalPrice)
                     .description("Thanh toan Workshop")
                     .returnUrl(baseUrl + "/workshops")
                     .cancelUrl(baseUrl + "/workshops")
@@ -220,7 +238,7 @@ public class WorkshopService {
                     .build();
 
             try {
-                log.info("📦 Creating PayOS payment link. OrderCode: {}, Amount: {}", orderCode, workshop.getPrice().intValue());
+                log.info("📦 Creating PayOS payment link. OrderCode: {}, Amount: {}", orderCode, (int) finalPrice);
                 CheckoutResponseData data = payOS.createPaymentLink(paymentData);
                 checkoutUrl = data.getCheckoutUrl();
             } catch (Exception e) {

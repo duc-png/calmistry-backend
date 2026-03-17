@@ -4,6 +4,7 @@ import com.example.demo.dto.request.CreateJournalRequest;
 import com.example.demo.dto.request.UpdateJournalRequest;
 import com.example.demo.dto.response.JournalResponse;
 import com.example.demo.dto.response.JournalStatsResponse;
+import com.example.demo.entity.GamificationEventType;
 import com.example.demo.entity.Journal;
 import com.example.demo.entity.User;
 import com.example.demo.exception.AppException;
@@ -30,6 +31,7 @@ public class JournalService {
     JournalRepository journalRepository;
     UserRepository userRepository;
     AiChatService aiChatService;
+    GamificationService gamificationService;
 
     /**
      * Get current authenticated user
@@ -81,6 +83,7 @@ public class JournalService {
         journal.setMood(request.getMood());
 
         journal = journalRepository.save(journal);
+        gamificationService.awardDailySpin(user, GamificationEventType.JOURNAL_ENTRY);
 
         // Generate AI Healing Response asynchronously to prevent blocking response
         final Long journalId = journal.getId();

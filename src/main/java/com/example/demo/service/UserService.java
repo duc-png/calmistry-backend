@@ -28,6 +28,7 @@ public class UserService {
     UserStatsRepository userStatsRepository;
     RoleRepository roleRepository;
 
+    @org.springframework.transaction.annotation.Transactional
     public UserResponse getMyInfo() {
         var context = SecurityContextHolder.getContext();
         String name = context.getAuthentication().getName();
@@ -56,6 +57,7 @@ public class UserService {
         return mapToResponse(finalUser);
     }
 
+    @org.springframework.transaction.annotation.Transactional
     @org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
     public List<UserResponse> getAllUsers() {
         return userRepository.findAll().stream()
@@ -117,11 +119,18 @@ public class UserService {
         int points = 0;
         int streak = 0;
         java.time.LocalDate lastActivity = null;
+        int spinBalance = 0;
 
-        if (user.getUserStats() != null) {
-            points = user.getUserStats().getTotalPoints();
-            streak = user.getUserStats().getCurrentStreak();
-            lastActivity = user.getUserStats().getLastActivityDate();
+        UserStats stats = user.getUserStats();
+        if (stats == null && user.getId() != null) {
+            stats = userStatsRepository.findByUser_Id(user.getId()).orElse(null);
+        }
+
+        if (stats != null) {
+            points = stats.getTotalPoints() == null ? 0 : stats.getTotalPoints();
+            streak = stats.getCurrentStreak() == null ? 0 : stats.getCurrentStreak();
+            lastActivity = stats.getLastActivityDate();
+            spinBalance = stats.getSpinBalance() == null ? 0 : stats.getSpinBalance();
         }
 
         return UserResponse.builder()
@@ -135,6 +144,7 @@ public class UserService {
                 .fuedScore(points)
                 .currentStreak(streak)
                 .lastActivityDate(lastActivity)
+                .spinBalance(spinBalance)
                 .roles(user.getRoles().stream().map(com.example.demo.entity.Role::getName)
                         .collect(Collectors.toSet()))
                 .isOnboarded(user.getIsOnboarded())

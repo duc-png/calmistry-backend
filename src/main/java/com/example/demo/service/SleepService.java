@@ -5,6 +5,7 @@ import com.example.demo.dto.request.SubmitSleepQuizRequest;
 import com.example.demo.dto.response.SleepHistoryResponse;
 import com.example.demo.dto.response.SleepSessionResponse;
 import com.example.demo.entity.*;
+import com.example.demo.entity.GamificationEventType;
 import com.example.demo.exception.AppException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.SleepAnswerRepository;
@@ -37,6 +38,7 @@ public class SleepService {
     SleepAnswerRepository sleepAnswerRepository;
     SleepScoreRepository sleepScoreRepository;
     UserRepository userRepository;
+    GamificationService gamificationService;
 
     /**
      * Submit sleep quiz and calculate score
@@ -74,6 +76,8 @@ public class SleepService {
         SleepScore score = calculateScore(session, request.getAnswers());
         score.setSession(session);
         score = sleepScoreRepository.save(score);
+
+        gamificationService.awardDailySpin(user, GamificationEventType.SLEEP_QUALITY_REVIEW);
 
         // Build response
         return buildSessionResponse(session, score, request.getAnswers());
