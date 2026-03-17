@@ -1,6 +1,7 @@
 package com.example.demo.configuration;
 
 import com.example.demo.entity.Role;
+import com.example.demo.entity.UserPlan;
 import com.example.demo.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -64,6 +65,7 @@ public class DatabaseInitializer {
                         .fullName("Chuyên gia Tâm Lý")
                         .email("expert1@calmistry.com")
                         .roles(java.util.Set.of(expertRole))
+                        .plan(UserPlan.GOLD)
                         .build();
                 userRepository.save(expertUser);
                 log.info("✅ Created default user: expert1");
@@ -77,9 +79,42 @@ public class DatabaseInitializer {
                         .fullName("Super Administrator")
                         .email("admin_vip@calmistry.com")
                         .roles(java.util.Set.of(adminRole))
+                        .plan(UserPlan.GOLD)
                         .build();
                 userRepository.save(adminUser);
                 log.info("✅ Created default admin: admin_vip");
+            }
+
+            // Migrate existing users:
+            // - existing accounts (pre-plan column) => GOLD
+            // - ADMIN/EXPERT => always GOLD
+            try {
+                var users = userRepository.findAll();
+                boolean changed = false;
+                for (var u : users) {
+                    boolean isAdminOrExpert = u.getRoles() != null && u.getRoles().stream()
+                            .anyMatch(r -> "ADMIN".equalsIgnoreCase(r.getName()) || "EXPERT".equalsIgnoreCase(r.getName()));
+
+                    if (isAdminOrExpert) {
+                        if (u.getPlan() != UserPlan.GOLD) {
+                            u.setPlan(UserPlan.GOLD);
+                            changed = true;
+                        }
+                        continue;
+                    }
+
+                    if (u.getPlan() == null) {
+                        u.setPlan(UserPlan.GOLD);
+                        changed = true;
+                    }
+                }
+
+                if (changed) {
+                    userRepository.saveAll(users);
+                    log.info("Schema updated: user plans migrated.");
+                }
+            } catch (Exception e) {
+                log.warn("Could not migrate user plans (may already be done): {}", e.getMessage());
             }
 
             log.info("🎯 Database initialization completed!");

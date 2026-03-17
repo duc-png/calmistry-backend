@@ -4,6 +4,7 @@ import com.example.demo.dto.request.UserOnboardingRequest;
 import com.example.demo.dto.response.UserResponse;
 import com.example.demo.entity.User;
 import com.example.demo.entity.UserStats;
+import com.example.demo.entity.UserPlan;
 import com.example.demo.exception.AppException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.RoleRepository;
@@ -133,6 +134,8 @@ public class UserService {
             spinBalance = stats.getSpinBalance() == null ? 0 : stats.getSpinBalance();
         }
 
+        String effectivePlan = determineEffectivePlan(user).name();
+
         return UserResponse.builder()
                 .id(user.getId())
                 .username(user.getUsername())
@@ -145,6 +148,7 @@ public class UserService {
                 .currentStreak(streak)
                 .lastActivityDate(lastActivity)
                 .spinBalance(spinBalance)
+                .plan(effectivePlan)
                 .roles(user.getRoles().stream().map(com.example.demo.entity.Role::getName)
                         .collect(Collectors.toSet()))
                 .isOnboarded(user.getIsOnboarded())
@@ -156,5 +160,19 @@ public class UserService {
                 .createdAt(user.getCreatedAt())
                 .lastLoginDate(user.getLastLoginDate())
                 .build();
+    }
+
+    private UserPlan determineEffectivePlan(User user) {
+        if (user.getRoles() != null) {
+            boolean isAdminOrExpert = user.getRoles().stream().anyMatch(r -> {
+                String name = r.getName();
+                return "ADMIN".equalsIgnoreCase(name) || "EXPERT".equalsIgnoreCase(name)
+                        || "ROLE_ADMIN".equalsIgnoreCase(name) || "ROLE_EXPERT".equalsIgnoreCase(name);
+            });
+            if (isAdminOrExpert) return UserPlan.GOLD;
+        }
+
+        if (user.getPlan() == null) return UserPlan.GOLD; // legacy users (pre-migration)
+        return user.getPlan();
     }
 }

@@ -76,6 +76,11 @@ public class User {
     @Column(name = "last_login_date")
     private LocalDateTime lastLoginDate;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "plan", length = 10)
+    @Builder.Default
+    private UserPlan plan = UserPlan.SILVER;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

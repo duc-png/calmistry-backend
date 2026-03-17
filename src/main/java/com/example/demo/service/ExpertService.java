@@ -5,6 +5,7 @@ import com.example.demo.dto.response.ExpertRegisterResponse;
 import com.example.demo.entity.ExpertProfile;
 import com.example.demo.entity.Role;
 import com.example.demo.entity.User;
+import com.example.demo.entity.UserPlan;
 import com.example.demo.exception.AppException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.ExpertProfileRepository;
@@ -58,6 +59,7 @@ public class ExpertService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setFullName(request.getFullName());
         user.setIsActive(true);
+        user.setPlan(UserPlan.GOLD);
 
         // Gán role EXPERT cho user
         Set<Role> roles = new HashSet<>();

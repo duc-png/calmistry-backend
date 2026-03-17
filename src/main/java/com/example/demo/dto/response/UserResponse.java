@@ -22,6 +22,7 @@ public class UserResponse {
     Integer currentStreak;
     LocalDate lastActivityDate;
     Integer spinBalance;
+    String plan;
     java.util.Set<String> roles;
     Boolean isOnboarded;
     String gender;

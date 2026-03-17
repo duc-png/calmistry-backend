@@ -12,6 +12,7 @@ import com.example.demo.dto.response.UserRegistrationResponse;
 import com.example.demo.entity.GamificationEventType;
 import com.example.demo.entity.Role;
 import com.example.demo.entity.User;
+import com.example.demo.entity.UserPlan;
 import com.example.demo.exception.AppException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.InvalidatedTokenRepository;
@@ -111,6 +112,7 @@ public class AuthenticationService {
                 .fullName(request.getFullName())
                 .phoneNumber(request.getPhoneNumber())
                 .createdAt(LocalDateTime.now())
+                .plan(UserPlan.SILVER)
                 .build();
 
         // Save user first
@@ -296,6 +298,7 @@ public class AuthenticationService {
                         .googleId(googleId)
                         .avatarUrl(pictureUrl)
                         .createdAt(LocalDateTime.now())
+                        .plan(UserPlan.SILVER)
                         .build();
 
                 User savedUser = userRepository.save(user);

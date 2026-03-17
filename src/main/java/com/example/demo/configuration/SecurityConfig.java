@@ -31,6 +31,7 @@ public class SecurityConfig {
             "/auth/register", // User registration endpoint
             "/auth/google", // Google login endpoint
             "/auth/outbound/authentication", "/ws/**", "/journals/**", // TEMP: Testing without auth
+            "/payos/**", // PayOS webhook callback
             "/files/**", // Public File Access
             // Public Blog Access
             "/blogs/published", "/blogs/search", "/blogs/{id}",

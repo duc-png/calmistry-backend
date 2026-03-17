@@ -1,8 +1,12 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.ApiResponse;
+import com.example.demo.entity.SubscriptionOrder;
+import com.example.demo.entity.UserPlan;
 import com.example.demo.entity.Workshop;
 import com.example.demo.entity.WorkshopBooking;
+import com.example.demo.repository.SubscriptionOrderRepository;
+import com.example.demo.repository.UserRepository;
 import com.example.demo.repository.WorkshopBookingRepository;
 import com.example.demo.repository.WorkshopRepository;
 import lombok.AccessLevel;
@@ -29,6 +33,8 @@ public class PayOsWebhookController {
     PayOS payOS;
     WorkshopBookingRepository workshopBookingRepository;
     WorkshopRepository workshopRepository;
+    SubscriptionOrderRepository subscriptionOrderRepository;
+    UserRepository userRepository;
 
     @PostMapping("/webhook")
     public ApiResponse<String> handleWebhook(@RequestBody Object requestBody) {
@@ -58,6 +64,22 @@ public class PayOsWebhookController {
                         workshopRepository.save(workshop);
 
                         log.info("Confirmed booking for workshop {} via PayOS order {}", workshop.getTitle(), data.getOrderCode());
+                    }
+                } else {
+                    Optional<SubscriptionOrder> subOpt = subscriptionOrderRepository.findByOrderCode(data.getOrderCode());
+                    if (subOpt.isPresent()) {
+                        SubscriptionOrder order = subOpt.get();
+                        if (order.getStatus() == SubscriptionOrder.SubscriptionStatus.PENDING) {
+                            order.setStatus(SubscriptionOrder.SubscriptionStatus.PAID);
+                            order.setPaidAt(java.time.LocalDateTime.now());
+                            subscriptionOrderRepository.save(order);
+
+                            var user = order.getUser();
+                            user.setPlan(UserPlan.GOLD);
+                            userRepository.save(user);
+
+                            log.info("Upgraded user {} to GOLD via PayOS order {}", user.getUsername(), data.getOrderCode());
+                        }
                     }
                 }
             }
