@@ -30,6 +30,7 @@ public class SecurityConfig {
             "/users", "/auth/token", "/auth/introspect", "/auth/logout", "/auth/refresh",
             "/auth/register", // User registration endpoint
             "/auth/google", // Google login endpoint
+            "/auth/password/**", // Forgot/reset password with OTP
             "/auth/outbound/authentication", "/ws/**", "/journals/**", // TEMP: Testing without auth
             "/payos/**", // PayOS webhook callback
             "/files/**", // Public File Access
