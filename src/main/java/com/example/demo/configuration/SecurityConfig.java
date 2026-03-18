@@ -32,7 +32,7 @@ public class SecurityConfig {
             "/auth/google", // Google login endpoint
             "/auth/password/**", // Forgot/reset password with OTP
             "/auth/outbound/authentication", "/ws/**", "/journals/**", // TEMP: Testing without auth
-            "/payos/**", // PayOS webhook callback
+            "/payos/**", "/subscriptions/webhook/payos", // PayOS webhook callback
             "/files/**", // Public File Access
             // Public Blog Access
             "/blogs/published", "/blogs/search", "/blogs/{id}",
