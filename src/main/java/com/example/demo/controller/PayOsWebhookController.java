@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class PayosWebhookController {
+public class PayOsWebhookController {
     SubscriptionService subscriptionService;
 
     @PostMapping("/subscriptions/webhook")
