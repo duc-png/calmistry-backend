@@ -28,4 +28,14 @@ public class SubscriptionController {
                 .result(subscriptionService.createGoldCheckout(request == null ? null : request.getVoucherCode()))
                 .build();
     }
+
+    @PostMapping("/webhook/payos")
+    public ApiResponse<String> paymentWebhook(@org.springframework.web.bind.annotation.RequestBody com.fasterxml.jackson.databind.JsonNode requestBody) {
+        log.info("🔔 Received PayOS Webhook: {}", requestBody);
+        subscriptionService.processWebhook(requestBody);
+        return ApiResponse.<String>builder()
+                .code(1000)
+                .result("Webhook processed successfully")
+                .build();
+    }
 }

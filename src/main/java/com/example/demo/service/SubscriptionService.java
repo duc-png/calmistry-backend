@@ -133,4 +133,42 @@ public class SubscriptionService {
         if (trimmed.length() > 50) trimmed = trimmed.substring(0, 50);
         return trimmed;
     }
+
+    @Transactional
+    public void processWebhook(com.fasterxml.jackson.databind.JsonNode requestBody) {
+        if (requestBody == null || !requestBody.has("data")) {
+            log.warn("🔔 Skipping empty or invalid PayOS Webhook");
+            return;
+        }
+
+        com.fasterxml.jackson.databind.JsonNode data = requestBody.get("data");
+        long orderCode = data.get("orderCode").asLong();
+        String status = data.has("status") ? data.get("status").asText() : "";
+
+        log.info("🔔 Processing Webhook Data - OrderCode: {}, Status: {}", orderCode, status);
+
+        if ("PAID".equalsIgnoreCase(status)) {
+            SubscriptionOrder order = subscriptionOrderRepository.findByOrderCode(orderCode)
+                    .orElseThrow(() -> new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION, "Không tìm thấy Đơn hàng nâng cấp."));
+
+            if (order.getStatus() == SubscriptionOrder.SubscriptionStatus.PENDING) {
+                // 1. Update Order Status
+                order.setStatus(SubscriptionOrder.SubscriptionStatus.PAID);
+                order.setPaidAt(java.time.LocalDateTime.now());
+                subscriptionOrderRepository.save(order);
+
+                // 2. Upgrade User Tier
+                User user = order.getUser();
+                if (user != null) {
+                    user.setPlan(UserPlan.GOLD);
+                    userRepository.save(user);
+                    log.info("✅ SUCCESS: User '{}' upgraded to GOLD.", user.getUsername());
+                } else {
+                    log.error("❌ Order {} has NO user associated!", orderCode);
+                }
+            } else {
+                log.info("ℹ️ Order {} is already in status: {}. Skipping.", orderCode, order.getStatus());
+            }
+        }
+    }
 }

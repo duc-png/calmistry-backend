@@ -117,6 +117,23 @@ public class DatabaseInitializer {
                 log.warn("Could not migrate user plans (may already be done): {}", e.getMessage());
             }
 
+            // Seed/fake workshop stats for demo UI (admin list): show 26/30 and COMPLETED for Matcha Date.
+            try {
+                int updated = jdbcTemplate.update(
+                        "UPDATE workshops " +
+                                "SET max_participants = 30, current_participants = 26, status = 'COMPLETED', " +
+                                "start_time = COALESCE(start_time, '2026-03-12 09:00:00'), " +
+                                "end_time = COALESCE(end_time, '2026-03-12 10:30:00') " +
+                                "WHERE title LIKE ?",
+                        "%Matcha Date%"
+                );
+                if (updated > 0) {
+                    log.info("✅ Seeded Matcha Date workshop: 26/30, COMPLETED (rows updated: {}).", updated);
+                }
+            } catch (Exception e) {
+                log.warn("Could not seed Matcha Date workshop demo data: {}", e.getMessage());
+            }
+
             log.info("🎯 Database initialization completed!");
         };
     }
