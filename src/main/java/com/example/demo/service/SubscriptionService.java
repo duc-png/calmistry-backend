@@ -30,7 +30,7 @@ import java.util.concurrent.ThreadLocalRandom;
 @Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class SubscriptionService {
-    static final int GOLD_PRICE_VND = 2000;
+    static final int GOLD_PRICE_VND = 49000;
 
     PayOS payOS;
     UserRepository userRepository;
